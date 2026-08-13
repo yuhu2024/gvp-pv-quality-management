@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}管理员数据面板 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: transform 0.2s;
+        overflow: hidden;
+    }
+    .stat-card:hover { transform: translateY(-2px); }
+    .stat-card .card-body { padding: 1.2rem; }
+    .stat-card .stat-icon {
+        width: 48px; height: 48px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem; color: #fff;
+    }
+    .stat-card .stat-value {
+        font-size: 1.8rem; font-weight: 700; line-height: 1.2;
+    }
+    .stat-card .stat-label {
+        font-size: 0.85rem; color: #6c757d;
+    }
+    .icon-blue { background: linear-gradient(135deg, #4472C4, #5B9BD5); }
+    .icon-green { background: linear-gradient(135deg, #70AD47, #A9D18E); }
+    .icon-orange { background: linear-gradient(135deg, #ED7D31, #F4B183); }
+    .icon-purple { background: linear-gradient(135deg, #7030A0, #9B72CF); }
+    .icon-teal { background: linear-gradient(135deg, #00B0F0, #70D0F0); }
+    .icon-red { background: linear-gradient(135deg, #FF0000, #FF6B6B); }
+
+    .progress-section .card { border: none; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .progress-section .progress { height: 20px; border-radius: 10px; }
+    .progress-section .progress-bar { border-radius: 10px; }
+
+    /* CSS柱状图 */
+    .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 200px; padding-top: 20px; }
+    .bar-chart .bar-item { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
+    .bar-chart .bar {
+        width: 70%; min-width: 24px;
+        background: linear-gradient(180deg, #4472C4, #5B9BD5);
+        border-radius: 6px 6px 0 0;
+        transition: height 0.6s ease;
+        position: relative;
+    }
+    .bar-chart .bar:hover { opacity: 0.85; }
+    .bar-chart .bar-value {
+        position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+        font-size: 0.75rem; font-weight: 600; color: #333;
+        white-space: nowrap;
+    }
+    .bar-chart .bar-label {
+        margin-top: 8px; font-size: 0.75rem; color: #6c757d; text-align: center;
+    }
+
+    .top-table th { background-color: #f8f9fa; font-weight: 600; font-size: 0.85rem; }
+    .top-table td, .top-table th { vertical-align: middle; padding: 0.6rem 0.8rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <h4 class="mb-1"><i class="bi bi-bar-chart-line"></i> 管理员数据面板</h4>
+    <p class="text-muted mb-0">数据更新时间：{{ today|date:"Y年m月d日" }}</p>
+</div>
+
+<!-- 第一行：统计卡片 -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon icon-blue"><i class="bi bi-people"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_users }}</div>
+                    <div class="stat-label">总用户数</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon icon-green"><i class="bi bi-book"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_courses }}</div>
+                    <div class="stat-label">总课程数</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon icon-orange"><i class="bi bi-pencil-square"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_exams }}</div>
+                    <div class="stat-label">总考试数</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon icon-purple"><i class="bi bi-clipboard2-check"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_plans }}</div>
+                    <div class="stat-label">总计划数</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon icon-teal"><i class="bi bi-person-check"></i></div>
+                <div>
+                    <div class="stat-value">{{ active_users_7d }}</div>
+                    <div class="stat-label">近7天活跃</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card stat-card">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon icon-red"><i class="bi bi-person-lines-fill"></i></div>
+                <div>
+                    <div class="stat-value">{{ active_users_30d }}</div>
+                    <div class="stat-label">近30天活跃</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 第二行：进度/完成率 -->
+<div class="row g-3 mb-4 progress-section">
+    <div class="col-xl-3 col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="text-muted mb-3"><i class="bi bi-trophy"></i> 课程完成率</h6>
+                <div class="text-center mb-2">
+                    <span class="display-6 fw-bold text-primary">{{ completion_rate }}%</span>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-primary" style="width: {{ completion_rate }}%"></div>
+                </div>
+                <small class="text-muted">{{ completed_count }} / {{ total_enrolled }} 人已完成</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="text-muted mb-3"><i class="bi bi-check-circle"></i> 考试通过率</h6>
+                <div class="text-center mb-2">
+                    <span class="display-6 fw-bold text-success">{{ pass_rate }}%</span>
+                </div>
+                <div class="progress">
+                    <div class="progress-bar bg-success" style="width: {{ pass_rate }}%"></div>
+                </div>
+                <small class="text-muted">平均成绩 {{ avg_score }} 分</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="text-muted mb-3"><i class="bi bi-speedometer2"></i> 平均成绩</h6>
+                <div class="text-center">
+                    <span class="display-6 fw-bold text-warning">{{ avg_score }}</span>
+                    <span class="text-muted">分</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="text-muted mb-3"><i class="bi bi-list-task"></i> 任务完成情况</h6>
+                <table class="table table-sm table-borderless mb-0">
+                    <tr><td>总任务</td><td class="fw-bold text-end">{{ task_stats.total }}</td></tr>
+                    <tr><td><span class="badge bg-success">已完成</span></td><td class="fw-bold text-end">{{ task_stats.completed }}</td></tr>
+                    <tr><td><span class="badge bg-primary">进行中</span></td><td class="fw-bold text-end">{{ task_stats.in_progress }}</td></tr>
+                    <tr><td><span class="badge bg-danger">已逾期</span></td><td class="fw-bold text-end">{{ task_stats.overdue }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 第三行：趋势图 + 部门统计 -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-6">
+        <div class="card h-100" style="border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <div class="card-header bg-transparent">
+                <h6 class="mb-0"><i class="bi bi-graph-up"></i> 近7天每日学习人数</h6>
+            </div>
+            <div class="card-body">
+                {% if daily_active %}
+                {% with max_count=daily_active|length %}
+                {% with max_val=daily_active.0.count|add:1 %}
+                <div class="bar-chart">
+                    {% for item in daily_active %}
+                    {% widthratio item.count max_val 160 as bar_height %}
+                    <div class="bar-item">
+                        <div class="bar" style="height: {% widthratio item.count max_val 160 %}px;">
+                            <span class="bar-value">{{ item.count }}</span>
+                        </div>
+                        <span class="bar-label">{{ item.date }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endwith %}
+                {% endwith %}
+                {% else %}
+                <p class="text-muted text-center py-5">暂无数据</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="card h-100" style="border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <div class="card-header bg-transparent">
+                <h6 class="mb-0"><i class="bi bi-building"></i> 部门学习统计</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if dept_stats %}
+                <div class="table-responsive">
+                    <table class="table top-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>部门</th>
+                                <th class="text-center">人数</th>
+                                <th class="text-center">平均分</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dept in dept_stats %}
+                            <tr>
+                                <td>{{ dept.name }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary rounded-pill">{{ dept.user_count }}</span>
+                                </td>
+                                <td class="text-center">{{ dept.avg_score|floatformat:1|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-5">暂无数据</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 第四行：课程热度TOP10 -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card" style="border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-fire"></i> 课程热度 TOP10</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if top_courses %}
+                <div class="table-responsive">
+                    <table class="table top-table mb-0">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width:60px;">排名</th>
+                                <th>课程名称</th>
+                                <th class="text-center">分类</th>
+                                <th class="text-center">学习人数</th>
+                                <th class="text-center">完成人数</th>
+                                <th class="text-center">完成率</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for course in top_courses %}
+                            <tr>
+                                <td class="text-center">
+                                    {% if forloop.counter <= 3 %}
+                                    <span class="badge {% if forloop.counter == 1 %}bg-warning{% elif forloop.counter == 2 %}bg-secondary{% else %}bg-danger text-light{% endif %} rounded-pill">
+                                        {{ forloop.counter }}
+                                    </span>
+                                    {% else %}
+                                    {{ forloop.counter }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'courses:detail' course.pk %}" class="text-decoration-none">{{ course.title }}</a>
+                                </td>
+                                <td class="text-center">
+                                    {% if course.category %}{{ course.category.name }}{% else %}-{% endif %}
+                                </td>
+                                <td class="text-center fw-bold">{{ course.enrollment_count }}</td>
+                                <td class="text-center">{{ course.completed_count }}</td>
+                                <td class="text-center">
+                                    {% if course.enrollment_count > 0 %}
+                                        {% widthratio course.completed_count course.enrollment_count 100 as rate %}
+                                        {{ rate }}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-5">暂无数据</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 快捷操作 -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card" style="border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <div class="card-body d-flex flex-wrap gap-2 justify-content-center">
+                <a href="{% url 'courses:review_list' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-check2-square"></i> 审核管理
+                </a>
+                <a href="{% url 'logs:export_exam_scores' %}" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-file-earmark-excel"></i> 导出考试成绩
+                </a>
+                <a href="{% url 'logs:export_training_report' %}" class="btn btn-outline-info btn-sm">
+                    <i class="bi bi-file-earmark-bar-graph"></i> 导出培训报告
+                </a>
+                <a href="{% url 'logs:learning_log' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-clock-history"></i> 学习记录
+                </a>
+                <a href="{% url 'logs:operation_log' %}" class="btn btn-outline-dark btn-sm">
+                    <i class="bi bi-journal-text"></i> 操作日志
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

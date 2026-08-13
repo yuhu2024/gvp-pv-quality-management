@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}{{ target_user }} - 培训统计{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'logs:operation_log' %}">操作日志</a></li>
+                <li class="breadcrumb-item active">{{ target_user }} - 培训统计</li>
+            </ol>
+        </nav>
+        <h4><i class="bi bi-bar-chart-line"></i> {{ target_user }} - 培训统计</h4>
+    </div>
+</div>
+
+<!-- 概览统计 -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="text-primary">{{ total_logs }}</h5>
+                <small class="text-muted">学习记录总数</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="text-success">{{ total_duration }}秒</h5>
+                <small class="text-muted">总学习时长</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="text-info">{{ completed_tasks }}/{{ total_tasks }}</h5>
+                <small class="text-muted">任务完成情况</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="text-warning">{{ task_completion_rate }}%</h5>
+                <small class="text-muted">任务完成率</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 操作类型统计 -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">操作类型统计</h5>
+            </div>
+            <div class="card-body">
+                {% if action_stats %}
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>操作类型</th>
+                            <th>次数</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in action_stats %}
+                        <tr>
+                            <td>{{ stat.action_type }}</td>
+                            <td><span class="badge bg-primary">{{ stat.count }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted">暂无数据。</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 考试成绩 -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">考试成绩</h5>
+            </div>
+            <div class="card-body">
+                {% if exam_attempts %}
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>考试</th>
+                            <th>得分</th>
+                            <th>提交时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attempt in exam_attempts %}
+                        <tr>
+                            <td>{{ attempt.exam.title }}</td>
+                            <td>
+                                {% if attempt.score >= attempt.exam.pass_score %}
+                                <span class="text-success">{{ attempt.score }}</span>
+                                {% else %}
+                                <span class="text-danger">{{ attempt.score }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ attempt.submitted_at|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted">暂无考试记录。</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 课程学习进度 -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">课程学习进度</h5>
+            </div>
+            <div class="card-body">
+                {% if course_logs %}
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>课程名称</th>
+                            <th>浏览次数</th>
+                            <th>总学习时长</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in course_logs %}
+                        <tr>
+                            <td>{{ log.course__title }}</td>
+                            <td>{{ log.view_count }}次</td>
+                            <td>
+                                {% if log.total_duration %}
+                                {{ log.total_duration }}秒
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted">暂无课程学习记录。</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

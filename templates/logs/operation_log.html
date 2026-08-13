@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}操作日志 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h4><i class="bi bi-journal-text"></i> 操作日志</h4>
+    </div>
+</div>
+
+<!-- 筛选 -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <form method="get" class="row g-3">
+            <div class="col-md-2">
+                <select name="user" class="form-select">
+                    <option value="">全部用户</option>
+                    {% for u in users %}
+                    <option value="{{ u.id }}" {% if current_user == u.id|stringformat:"s" %}selected{% endif %}>
+                        {{ u }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="action" class="form-select">
+                    <option value="">全部操作</option>
+                    {% for value, label in action_choices %}
+                    <option value="{{ value }}" {% if current_action == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="start_date" class="form-control" value="{{ current_start_date }}" placeholder="开始日期">
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="end_date" class="form-control" value="{{ current_end_date }}" placeholder="结束日期">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel"></i> 筛选
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 操作日志列表 -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>时间</th>
+                    <th>用户</th>
+                    <th>操作</th>
+                    <th>对象类型</th>
+                    <th>对象ID</th>
+                    <th>IP地址</th>
+                    <th>描述</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+                    <td>{{ log.user|default:"匿名" }}</td>
+                    <td><span class="badge bg-warning text-dark">{{ log.get_action_display }}</span></td>
+                    <td>{{ log.get_target_type_display|default:"-" }}</td>
+                    <td>{{ log.target_id|default:"-" }}</td>
+                    <td><code>{{ log.ip_address|default:"-" }}</code></td>
+                    <td>
+                        {% if log.description %}
+                        <small class="text-muted">{{ log.description|truncatechars:50 }}</small>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">暂无操作日志。</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 分页 -->
+{% if is_paginated %}
+<nav aria-label="操作日志分页" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
+        </li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+        </li>
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
