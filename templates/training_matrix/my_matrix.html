@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}我的培训矩阵 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 总览统计卡片 */
+    .overview-card {
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+        padding: 20px;
+        text-align: center;
+        transition: all 0.2s;
+    }
+    .overview-card:hover {
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    .overview-card .icon-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 8px;
+        font-size: 1.3rem;
+    }
+    .overview-card .num {
+        font-size: 1.8rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .overview-card .label {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    /* 矩阵卡片 */
+    .matrix-card {
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+    .matrix-card-header {
+        background: linear-gradient(135deg, #0d6efd, #0a58ca);
+        color: #fff;
+        padding: 14px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .matrix-card-header h6 {
+        margin: 0;
+        font-weight: 600;
+    }
+    .matrix-card-header .progress-ring {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .matrix-card-header .progress-ring .pct {
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    /* 课程条目 */
+    .course-item {
+        padding: 12px 20px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: background 0.15s;
+    }
+    .course-item:last-child {
+        border-bottom: none;
+    }
+    .course-item:hover {
+        background: #f8f9ff;
+    }
+    .course-item .status-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 0.9rem;
+    }
+    .course-item .status-icon.completed {
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+    .course-item .status-icon.in_progress {
+        background: #cff4fc;
+        color: #055160;
+    }
+    .course-item .status-icon.pending {
+        background: #e2e3e5;
+        color: #6c757d;
+    }
+    .course-item .status-icon.overdue {
+        background: #f8d7da;
+        color: #842029;
+    }
+
+    .course-item .course-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .course-item .course-info .course-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .course-item .course-info .course-title a {
+        color: #333;
+        text-decoration: none;
+    }
+    .course-item .course-info .course-title a:hover {
+        color: #0d6efd;
+    }
+    .course-item .course-info .course-meta {
+        font-size: 0.8rem;
+        color: #999;
+    }
+    .course-item .course-info .course-meta i {
+        margin-right: 2px;
+    }
+
+    .course-item .progress-col {
+        width: 140px;
+        flex-shrink: 0;
+    }
+    .course-item .progress-col .progress {
+        height: 6px;
+        border-radius: 3px;
+    }
+    .course-item .progress-col .pct-text {
+        font-size: 0.8rem;
+        color: #666;
+        text-align: right;
+        margin-bottom: 2px;
+    }
+    .course-item .status-col {
+        width: 80px;
+        flex-shrink: 0;
+        text-align: center;
+    }
+    .course-item .status-col .badge {
+        font-size: 0.78rem;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 12px;
+    }
+
+    .course-item .action-col {
+        width: 36px;
+        flex-shrink: 0;
+        text-align: center;
+    }
+
+    /* 空状态 */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    .empty-state .icon {
+        font-size: 4rem;
+        opacity: 0.12;
+        margin-bottom: 16px;
+    }
+    .empty-state h5 {
+        color: #6c757d;
+        margin-bottom: 8px;
+    }
+    .empty-state p {
+        color: #adb5bd;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <!-- 页面标题 -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-1"><i class="bi bi-grid-3x3-gap-fill text-primary"></i> 我的培训矩阵</h4>
+            <p class="text-muted mb-0 small">
+                {% if user.department %}
+                所属部门：<strong>{{ user.department.name }}</strong>
+                {% if user.position %} | 岗位：<strong>{{ user.position }}</strong>{% endif %}
+                {% else %}
+                暂未分配部门，无法显示培训矩阵
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    {% if user.department %}
+    <!-- 总览统计 -->
+    <div class="row g-3 mb-4">
+        <div class="col-4 col-md-3 col-lg-2">
+            <div class="overview-card">
+                <div class="icon-circle" style="background: #e7f1ff; color: #0d6efd;">
+                    <i class="bi bi-list-check"></i>
+                </div>
+                <div class="num">{{ total_required }}</div>
+                <div class="label">必修课程</div>
+            </div>
+        </div>
+        <div class="col-4 col-md-3 col-lg-2">
+            <div class="overview-card">
+                <div class="icon-circle" style="background: #d1e7dd; color: #0f5132;">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div class="num text-success">{{ total_completed }}</div>
+                <div class="label">已完成</div>
+            </div>
+        </div>
+        <div class="col-4 col-md-3 col-lg-2">
+            <div class="overview-card">
+                <div class="icon-circle" style="background: #fff3cd; color: #856404;">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <div class="num text-warning">{{ total_required|add:"-total_completed" }}</div>
+                <div class="label">待完成</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 col-lg-3">
+            <div class="overview-card">
+                <div class="icon-circle" style="background: linear-gradient(135deg, #e7f1ff, #d1e7dd);">
+                    <i class="bi bi-graph-up-arrow text-primary"></i>
+                </div>
+                <div class="num text-primary">{{ overall_pct }}%</div>
+                <div class="label">总体完成率</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-12 col-lg-3">
+            <div class="overview-card">
+                <div class="progress" style="height: 8px; border-radius: 4px; margin-top: 14px; margin-bottom: 6px;">
+                    <div class="progress-bar {% if overall_pct == 100 %}bg-success{% elif overall_pct >= 50 %}bg-primary{% else %}bg-warning{% endif %}"
+                         style="width: {{ overall_pct }}%"></div>
+                </div>
+                <div class="label">
+                    {% if overall_pct == 100 %}
+                    <span class="text-success"><i class="bi bi-emoji-smile"></i> 已完成所有必修课程</span>
+                    {% elif overall_pct >= 50 %}
+                    继续加油，已过半程
+                    {% else %}
+                    请尽快安排学习
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 矩阵详情 -->
+    {% for md in matrix_data %}
+    <div class="matrix-card">
+        <div class="matrix-card-header">
+            <h6><i class="bi bi-building"></i> {{ md.matrix.title }}</h6>
+            <div class="progress-ring">
+                <div class="pct">{{ md.progress_pct }}%</div>
+                <div class="progress" style="width: 80px; height: 6px; background: rgba(255,255,255,0.25); border-radius: 3px;">
+                    <div class="progress-bar bg-white" style="width: {{ md.progress_pct }}%; border-radius: 3px;"></div>
+                </div>
+                <small>{{ md.completed }}/{{ md.total }}</small>
+            </div>
+        </div>
+        <div>
+            {% for ci in md.items %}
+            <div class="course-item">
+                <div class="status-icon {{ ci.status }}">
+                    {% if ci.is_completed %}
+                    <i class="bi bi-check-lg"></i>
+                    {% elif ci.status == 'in_progress' %}
+                    <i class="bi bi-arrow-repeat"></i>
+                    {% elif ci.status == 'overdue' %}
+                    <i class="bi bi-exclamation"></i>
+                    {% else %}
+                    <i class="bi bi-clock"></i>
+                    {% endif %}
+                </div>
+                <div class="course-info">
+                    <div class="course-title">
+                        <a href="{% url 'courses:detail' ci.item.course.pk %}">{{ ci.item.course.title }}</a>
+                    </div>
+                    <div class="course-meta">
+                        {% if ci.item.position %}
+                        <span class="me-2"><i class="bi bi-person-badge"></i> {{ ci.item.position }}</span>
+                        {% else %}
+                        <span class="me-2"><i class="bi bi-people"></i> 全员必修</span>
+                        {% endif %}
+                        {% if ci.due_date %}
+                        <span><i class="bi bi-calendar3"></i> 截止：{{ ci.due_date|date:"Y-m-d" }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="progress-col">
+                    <div class="pct-text">{{ ci.course_progress }}%</div>
+                    <div class="progress">
+                        <div class="progress-bar {% if ci.course_progress == 100 %}bg-success{% else %}bg-primary{% endif %}"
+                             style="width: {{ ci.course_progress }}%"></div>
+                    </div>
+                </div>
+                <div class="status-col">
+                    {% if ci.is_completed %}
+                    <span class="badge bg-success">已完成</span>
+                    {% elif ci.status == 'overdue' %}
+                    <span class="badge bg-danger">已逾期</span>
+                    {% elif ci.status == 'in_progress' %}
+                    <span class="badge bg-info text-dark">学习中</span>
+                    {% else %}
+                    <span class="badge bg-secondary">未开始</span>
+                    {% endif %}
+                </div>
+                <div class="action-col">
+                    <a href="{% url 'courses:detail' ci.item.course.pk %}" class="text-decoration-none text-secondary">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <div class="icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+        <h5>暂无培训矩阵</h5>
+        <p>您所在部门尚未配置培训矩阵，请联系管理员设置</p>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <div class="icon"><i class="bi bi-person-x"></i></div>
+        <h5>未分配部门</h5>
+        <p>请联系管理员分配部门，以查看您的培训矩阵</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

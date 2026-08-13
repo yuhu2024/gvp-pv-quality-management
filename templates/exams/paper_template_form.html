@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}{% if template %}编辑{% else %}创建{% endif %}出卷模板 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.rule-row { background: #f8f9fa; border-radius: 8px; padding: 12px; margin-bottom: 10px; position: relative; }
+.rule-row .btn-remove { position: absolute; top: 8px; right: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-file-earmark-text"></i>
+                    {% if template %}编辑出卷模板{% else %}创建出卷模板{% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" id="templateForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">模板名称 <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" value="{{ template.name|default:'' }}" required placeholder="例如：安全生产考核">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">模板说明</label>
+                        <textarea name="description" class="form-control" rows="2">{{ template.description|default:'' }}</textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">考试时长（分钟）</label>
+                            <input type="number" name="duration" class="form-control" value="{{ template.duration|default:60 }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">及格分数</label>
+                            <input type="number" name="pass_score" class="form-control" value="{{ template.pass_score|default:60 }}">
+                        </div>
+                    </div>
+
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">出卷规则</h6>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="addRule">
+                            <i class="bi bi-plus"></i> 添加规则
+                        </button>
+                    </div>
+
+                    <div id="rulesContainer">
+                        {% if template %}
+                        {% for rule in template.rules.all %}
+                        <div class="rule-row">
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-remove" onclick="this.closest('.rule-row').remove()"><i class="bi bi-x"></i></button>
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <label class="form-label small">题目类型</label>
+                                    <select name="rule_type[]" class="form-select form-select-sm">
+                                        {% for value, label in type_choices %}
+                                        <option value="{{ value }}" {% if rule.question_type == value %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">数量</label>
+                                    <input type="number" name="rule_count[]" class="form-control form-control-sm" value="{{ rule.count }}" min="1">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">每题分值</label>
+                                    <input type="number" name="rule_score[]" class="form-control form-control-sm" value="{{ rule.score_per_question }}" min="1">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">难度</label>
+                                    <select name="rule_difficulty[]" class="form-select form-select-sm">
+                                        {% for value, label in difficulty_choices %}
+                                        <option value="{{ value }}" {% if rule.difficulty == value %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small">限定知识点ID</label>
+                                    <input type="text" name="rule_kp_ids[]" class="form-control form-control-sm" value="{{ rule.knowledge_point_ids }}" placeholder="留空=不限，用逗号分隔">
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> {% if template %}保存修改{% else %}创建模板{% endif %}
+                        </button>
+                        <a href="{% url 'exams:paper_template_list' %}" class="btn btn-secondary">取消</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var container = document.getElementById('rulesContainer');
+    var typeChoices = {{ type_choices|safe|default:'[["single_choice","单选题"],["multi_choice","多选题"],["true_false","判断题"],["fill_blank","填空题"],["essay","简答题"]]' }};
+    var diffChoices = {{ difficulty_choices|safe|default:'[["easy","简单"],["medium","中等"],["hard","困难"],["mixed","混合"]]' }};
+
+    var ruleTemplate = '<div class="rule-row">' +
+        '<button type="button" class="btn btn-sm btn-outline-danger btn-remove" onclick="this.closest(\'.rule-row\').remove()"><i class="bi bi-x"></i></button>' +
+        '<div class="row g-2">' +
+        '<div class="col-md-3"><label class="form-label small">题目类型</label><select name="rule_type[]" class="form-select form-select-sm">' +
+        typeChoices.map(function(c) { return '<option value="' + c[0] + '">' + c[1] + '</option>'; }).join('') +
+        '</select></div>' +
+        '<div class="col-md-2"><label class="form-label small">数量</label><input type="number" name="rule_count[]" class="form-control form-control-sm" value="10" min="1"></div>' +
+        '<div class="col-md-2"><label class="form-label small">每题分值</label><input type="number" name="rule_score[]" class="form-control form-control-sm" value="5" min="1"></div>' +
+        '<div class="col-md-2"><label class="form-label small">难度</label><select name="rule_difficulty[]" class="form-select form-select-sm">' +
+        diffChoices.map(function(c) { return '<option value="' + c[0] + '">' + c[1] + '</option>'; }).join('') +
+        '</select></div>' +
+        '<div class="col-md-3"><label class="form-label small">限定知识点ID</label><input type="text" name="rule_kp_ids[]" class="form-control form-control-sm" placeholder="留空=不限，用逗号分隔"></div>' +
+        '</div></div>';
+
+    document.getElementById('addRule').addEventListener('click', function() {
+        container.insertAdjacentHTML('beforeend', ruleTemplate);
+    });
+
+    // 如果没有规则，自动添加一条
+    if (!container.querySelector('.rule-row')) {
+        container.insertAdjacentHTML('beforeend', ruleTemplate);
+    }
+})();
+</script>
+{% endblock %}

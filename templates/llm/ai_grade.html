@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}AI 批改 - {{ exam.title }} - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.grade-card { border-left: 3px solid #6f42c1; }
+.grade-card .student-answer { background: #f8f9fa; padding: 12px; border-radius: 6px; margin: 8px 0; }
+.grade-result { background: #e8f5e9; border-radius: 6px; padding: 12px; margin-top: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-robot"></i> AI 批改简答题 - {{ exam.title }}</h4>
+                <a href="{% url 'exams:scores' exam.pk %}" class="btn btn-sm btn-secondary">返回成绩</a>
+            </div>
+            <div class="card-body">
+                {% if essay_answers %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> 共 <strong>{{ essay_answers|length }}</strong> 份简答题答案待批改。
+                    点击"AI评分"预览评分结果，确认后点击"应用评分"生效。
+                </div>
+
+                {% for answer in essay_answers %}
+                <div class="card mb-3 grade-card">
+                    <div class="card-body">
+                        <h6>
+                            <span class="badge bg-secondary">{{ answer.attempt.user }}</span>
+                            {{ answer.question.question_text }}
+                            <small class="text-muted">（{{ answer.question.score }}分）</small>
+                        </h6>
+                        <div class="student-answer">
+                            <strong>学生回答：</strong><br>
+                            {{ answer.user_answer|linebreaksbr }}
+                        </div>
+                        <div class="text-muted small">
+                            <strong>参考答案：</strong>{{ answer.question.correct_answer }}
+                        </div>
+
+                        <div class="mt-2 d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="aiGrade({{ answer.id }}, 'grade')">
+                                <i class="bi bi-magic"></i> AI 评分
+                            </button>
+                            <button class="btn btn-sm btn-success d-none" id="applyBtn_{{ answer.id }}"
+                                    onclick="aiGrade({{ answer.id }}, 'apply')">
+                                <i class="bi bi-check-circle"></i> 应用评分
+                            </button>
+                        </div>
+
+                        <div id="result_{{ answer.id }}"></div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-check-circle" style="font-size: 3rem;"></i>
+                    <p class="mt-3">此考试没有简答题，或简答题已全部批改完毕。</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function aiGrade(answerId, action) {
+    var resultDiv = document.getElementById('result_' + answerId);
+    var btn = event.target.closest('button');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> AI思考中...';
+
+    var formData = new FormData();
+    formData.append('answer_id', answerId);
+    formData.append('action', action);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch(window.location.pathname, {
+        method: 'POST',
+        body: formData,
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = action === 'grade' ? '<i class="bi bi-magic"></i> AI 评分' : '<i class="bi bi-check-circle"></i> 应用评分';
+
+        if (data.ok) {
+            resultDiv.innerHTML = '<div class="grade-result">' +
+                '<strong>AI 评分：' + data.score + ' / ' + data.max_score + ' 分</strong>' +
+                '<p class="mb-0 mt-1">' + data.comment + '</p>' +
+                '</div>';
+            if (action === 'grade') {
+                document.getElementById('applyBtn_' + answerId).classList.remove('d-none');
+            } else {
+                btn.classList.add('d-none');
+                resultDiv.innerHTML += '<p class="text-success mt-1"><i class="bi bi-check-circle-fill"></i> 评分已应用</p>';
+            }
+        } else {
+            resultDiv.innerHTML = '<div class="alert alert-danger mt-2">' + data.message + '</div>';
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-magic"></i> AI 评分';
+        resultDiv.innerHTML = '<div class="alert alert-danger">请求失败</div>';
+    });
+}
+</script>
+{% endblock %}

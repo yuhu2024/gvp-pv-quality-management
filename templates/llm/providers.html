@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}大模型配置 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.provider-card { transition: transform 0.2s; }
+.provider-card:hover { transform: translateY(-2px); }
+.preset-btn { cursor: pointer; }
+.preset-btn:hover { background: #e7f1ff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-robot"></i> 大模型配置</h4>
+                <div>
+                    <a href="{% url 'llm:logs' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-journal-text"></i> 调用日志</a>
+                    <a href="{% url 'llm:provider_create' %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-circle"></i> 添加模型</a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if providers %}
+                <div class="row">
+                    {% for p in providers %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card provider-card h-100 {% if p.is_default %}border-success{% else %}border-light{% endif %}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            {{ p.name }}
+                                            {% if p.is_default %}<span class="badge bg-success">默认</span>{% endif %}
+                                            {% if not p.is_active %}<span class="badge bg-secondary">已禁用</span>{% endif %}
+                                        </h6>
+                                        <p class="mb-0 text-muted small">{{ p.get_provider_display }}</p>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-gear"></i></button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="{% url 'llm:provider_edit' p.pk %}"><i class="bi bi-pencil"></i> 编辑</a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="testProvider({{ p.pk }})"><i class="bi bi-plug"></i> 测试连接</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteProvider({{ p.pk }})"><i class="bi bi-trash"></i> 删除</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="small">
+                                    <div><strong>模型：</strong>{{ p.model_name }}</div>
+                                    <div><strong>地址：</strong><code class="text-muted">{{ p.base_url }}</code></div>
+                                    <div><strong>温度：</strong>{{ p.temperature }} | <strong>最大Token：</strong>{{ p.max_tokens }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-robot" style="font-size: 3rem;"></i>
+                    <p class="mt-3">尚未配置任何大模型</p>
+                    <p class="small">支持 Kimi、豆包、阿里千问、OpenAI 等 OpenAI 兼容接口</p>
+                    <a href="{% url 'llm:provider_create' %}" class="btn btn-primary">添加第一个模型</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function testProvider(pk) {
+    fetch('/llm/providers/' + pk + '/test/')
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            alert('连接成功！\n模型回复：' + data.message);
+        } else {
+            alert('连接失败：\n' + data.message);
+        }
+    })
+    .catch(() => alert('请求失败'));
+}
+
+function deleteProvider(pk) {
+    if (!confirm('确定要删除此模型配置吗？')) return;
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/llm/providers/' + pk + '/delete/';
+    var csrf = document.createElement('input');
+    csrf.type = 'hidden';
+    csrf.name = 'csrfmiddlewaretoken';
+    csrf.value = '{{ csrf_token }}';
+    form.appendChild(csrf);
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
+{% endblock %}

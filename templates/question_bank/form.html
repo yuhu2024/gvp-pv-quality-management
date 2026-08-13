@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}{% if question %}编辑题目{% else %}添加题目{% endif %} - 题库管理{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-section { border-left: 3px solid #4472C4; padding-left: 20px; margin-bottom: 20px; }
+.form-section h6 { color: #4472C4; font-weight: 600; }
+.preview-box { background: #f8f9fa; border-radius: 8px; padding: 16px; margin-top: 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-9">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-{% if question %}pencil-square{% else %}plus-circle{% endif %}"></i>
+                    {% if question %}编辑题目{% else %}添加题目{% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" id="questionForm">
+                    {% csrf_token %}
+
+                    <div class="form-section">
+                        <h6>题目信息</h6>
+                        <div class="mb-3">
+                            <label class="form-label">题目内容 <span class="text-danger">*</span></label>
+                            <textarea name="question_text" class="form-control" rows="3" required>{{ question.question_text|default:'' }}</textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">题目类型</label>
+                                <select name="question_type" class="form-select" id="qType">
+                                    {% for value, label in type_choices %}
+                                    <option value="{{ value }}" {% if question and question.question_type == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">难度</label>
+                                <select name="difficulty" class="form-select">
+                                    {% for value, label in difficulty_choices %}
+                                    <option value="{{ value }}" {% if question and question.difficulty == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">分值</label>
+                                <input type="number" name="score" class="form-control" value="{{ question.score|default:5 }}" min="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section" id="optionsSection">
+                        <h6>选项与答案</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">选项 A</label>
+                                <input type="text" name="option_a" class="form-control" value="{{ question.option_a|default:'' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">选项 B</label>
+                                <input type="text" name="option_b" class="form-control" value="{{ question.option_b|default:'' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">选项 C</label>
+                                <input type="text" name="option_c" class="form-control" value="{{ question.option_c|default:'' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">选项 D</label>
+                                <input type="text" name="option_d" class="form-control" value="{{ question.option_d|default:'' }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">正确答案 <span class="text-danger">*</span></label>
+                            <input type="text" name="correct_answer" class="form-control" value="{{ question.correct_answer|default:'' }}" required
+                                   placeholder="单选题：A / 多选题：A,B / 判断题：True/False / 填空题：填写答案">
+                            <small class="text-muted">单选题填字母（A/B/C/D），多选题用逗号分隔（A,B），判断题填 True/False</small>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h6>分类与解析</h6>
+                        <div class="mb-3">
+                            <label class="form-label">知识点</label>
+                            <select name="knowledge_points" class="form-select" multiple style="height: 120px;">
+                                {% for kp in knowledge_points %}
+                                <option value="{{ kp.id }}" {% if question and kp in question.knowledge_points.all %}selected{% endif %}>{{ kp.full_path }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">按住 Ctrl/Cmd 可多选</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">标签</label>
+                            <input type="text" name="tags" class="form-control" value="{{ question.tags|default:'' }}" placeholder="多个标签用逗号分隔，如：法规,安全,操作">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">答案解析</label>
+                            <textarea name="analysis" class="form-control" rows="3" placeholder="考生查看结果时显示（可选）">{{ question.analysis|default:'' }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> {% if question %}保存修改{% else %}添加到题库{% endif %}
+                        </button>
+                        <a href="{% url 'question_bank:list' %}" class="btn btn-secondary">取消</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var qType = document.getElementById('qType');
+    var optionsSection = document.getElementById('optionsSection');
+
+    function toggleOptions() {
+        var type = qType.value;
+        var showOptions = ['single_choice', 'multi_choice'].includes(type);
+        optionsSection.style.display = showOptions ? '' : 'none';
+    }
+
+    qType.addEventListener('change', toggleOptions);
+    toggleOptions();
+})();
+</script>
+{% endblock %}

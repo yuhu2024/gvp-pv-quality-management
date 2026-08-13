@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} - 电子签名{% endblock %}
+
+{% block extra_css %}
+<style>
+    .signature-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 10px;
+    }
+
+    .signature-pad-wrapper {
+        position: relative;
+        width: 100%;
+        height: 280px;
+        background: #fff;
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        overflow: hidden;
+        touch-action: none; /* 防止触摸滚动 */
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    .signature-pad-wrapper.drawing {
+        border-color: #0d6efd;
+        background: #f8f9fa;
+    }
+
+    #signatureCanvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        cursor: crosshair;
+    }
+
+    .signature-hint {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #aaa;
+        font-size: 1.1rem;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .signature-hint.hidden {
+        display: none;
+    }
+
+    .sig-btn-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .sig-btn-group .btn {
+        flex: 1;
+        padding: 12px;
+        font-size: 1rem;
+    }
+
+    .timestamp-display {
+        text-align: center;
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 10px;
+    }
+
+    .signer-info {
+        text-align: center;
+        margin-bottom: 15px;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .signer-info .name {
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: #333;
+    }
+
+    .signer-info .time {
+        color: #666;
+        font-size: 0.85rem;
+        margin-top: 4px;
+    }
+
+    /* 移动端优化 */
+    @media (max-width: 576px) {
+        .signature-pad-wrapper {
+            height: 220px;
+        }
+        .sig-btn-group {
+            flex-direction: column;
+        }
+        .sig-btn-group .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="signature-container">
+    <div class="text-center mb-3">
+        <h4><i class="bi bi-pen"></i> {{ page_title }}</h4>
+        <p class="text-muted small">请在下方框内手写签名，签名具有法律效力</p>
+    </div>
+
+    <div class="signer-info">
+        <div class="name">{{ request.user.get_full_name|default:request.user.username }}</div>
+        <div class="time">工号：{{ request.user.employee_id|default:"--" }}</div>
+    </div>
+
+    <div class="signature-pad-wrapper" id="padWrapper">
+        <div class="signature-hint" id="sigHint">在此处手写签名</div>
+        <canvas id="signatureCanvas"></canvas>
+    </div>
+
+    <div class="timestamp-display" id="timestampDisplay"></div>
+
+    <div class="sig-btn-group">
+        <button type="button" class="btn btn-outline-secondary" id="btnClear">
+            <i class="bi bi-eraser"></i> 清空
+        </button>
+        <button type="button" class="btn btn-outline-warning" id="btnRedraw" disabled>
+            <i class="bi bi-arrow-counterclockwise"></i> 重签
+        </button>
+        <button type="button" class="btn btn-primary" id="btnConfirm" disabled>
+            <i class="bi bi-check-lg"></i> 确认签名
+        </button>
+    </div>
+
+    <div class="mt-3 text-center text-muted small">
+        <p><i class="bi bi-shield-check"></i> 签名将绑定当前时间戳并加密存储</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var canvas = document.getElementById('signatureCanvas');
+    var wrapper = document.getElementById('padWrapper');
+    var hint = document.getElementById('sigHint');
+    var ctx = canvas.getContext('2d');
+    var isDrawing = false;
+    var hasDrawn = false;
+    var points = [];
+
+    var btnClear = document.getElementById('btnClear');
+    var btnRedraw = document.getElementById('btnRedraw');
+    var btnConfirm = document.getElementById('btnConfirm');
+    var timestampDisplay = document.getElementById('timestampDisplay');
+
+    // 适配 Canvas 尺寸
+    function resizeCanvas() {
+        var rect = wrapper.getBoundingClientRect();
+        var dpr = window.devicePixelRatio || 1;
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#000';
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', function() {
+        // 简单处理：resize 后清空（更复杂的可以保存并重绘）
+        if (!hasDrawn) resizeCanvas();
+    });
+
+    // 获取坐标（适配触摸和鼠标）
+    function getPos(e) {
+        var rect = canvas.getBoundingClientRect();
+        var clientX, clientY;
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
+        };
+    }
+
+    // 开始绘制
+    function startDraw(e) {
+        e.preventDefault();
+        isDrawing = true;
+        hasDrawn = true;
+        hint.classList.add('hidden');
+        wrapper.classList.add('drawing');
+        var pos = getPos(e);
+        points = [pos];
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+    }
+
+    // 绘制中
+    function moveDraw(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        var pos = getPos(e);
+        points.push(pos);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+    }
+
+    // 结束绘制
+    function endDraw(e) {
+        if (!isDrawing) return;
+        isDrawing = false;
+        wrapper.classList.remove('drawing');
+        btnConfirm.disabled = false;
+        btnRedraw.disabled = false;
+        updateTimestamp();
+    }
+
+    // 更新时间戳显示
+    function updateTimestamp() {
+        var now = new Date();
+        var str = now.getFullYear() + '-' +
+            String(now.getMonth() + 1).padStart(2, '0') + '-' +
+            String(now.getDate()).padStart(2, '0') + ' ' +
+            String(now.getHours()).padStart(2, '0') + ':' +
+            String(now.getMinutes()).padStart(2, '0') + ':' +
+            String(now.getSeconds()).padStart(2, '0');
+        timestampDisplay.textContent = '签名时间戳：' + str;
+    }
+
+    // 绑定事件（同时支持鼠标和触摸）
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', moveDraw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseleave', endDraw);
+
+    canvas.addEventListener('touchstart', startDraw, { passive: false });
+    canvas.addEventListener('touchmove', moveDraw, { passive: false });
+    canvas.addEventListener('touchend', endDraw);
+    canvas.addEventListener('touchcancel', endDraw);
+
+    // 清空
+    btnClear.addEventListener('click', function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        hasDrawn = false;
+        points = [];
+        hint.classList.remove('hidden');
+        btnConfirm.disabled = true;
+        btnRedraw.disabled = true;
+        timestampDisplay.textContent = '';
+    });
+
+    // 重签（同清空）
+    btnRedraw.addEventListener('click', function() {
+        btnClear.click();
+    });
+
+    // 确认签名并提交
+    btnConfirm.addEventListener('click', function() {
+        if (!hasDrawn) return;
+
+        btnConfirm.disabled = true;
+        btnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 保存中...';
+
+        // 将 Canvas 转为 Base64 PNG
+        var dataURL = canvas.toDataURL('image/png');
+
+        // 构建 FormData
+        var formData = new FormData();
+        formData.append('signature_data', dataURL);
+        formData.append('signature_type', '{{ sig_type }}');
+        formData.append('target_type', '{{ target_type }}');
+        formData.append('target_id', '{{ target_id }}');
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch('{% url "signatures:save_api" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(function(r) {
+            if (!r.ok) {
+                return r.text().then(function(text) {
+                    throw new Error('服务器返回错误 (HTTP ' + r.status + ')');
+                });
+            }
+            var contentType = r.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('服务器返回了非JSON数据，请检查网络或重新登录');
+            }
+            return r.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                // 签名保存成功，将 signature_id 附加到 redirect_url 后跳转
+                var redirectUrl = '{{ redirect_url|escapejs }}';
+                var separator = redirectUrl.indexOf('?') > -1 ? '&' : '?';
+                var finalUrl = redirectUrl + separator + 'signature_id=' + data.signature_id;
+                window.location.href = finalUrl;
+            } else {
+                alert('签名保存失败：' + (data.error || '未知错误'));
+                btnConfirm.disabled = false;
+                btnConfirm.innerHTML = '<i class="bi bi-check-lg"></i> 确认签名';
+            }
+        })
+        .catch(function(err) {
+            alert('签名提交失败：' + err.message + '\n\n如果是登录过期，请刷新页面后重试。');
+            btnConfirm.disabled = false;
+            btnConfirm.innerHTML = '<i class="bi bi-check-lg"></i> 确认签名';
+        });
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,275 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <title>培训签到 - {{ course.title }}</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                         "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            color: #333;
+        }
+
+        .mobile-wrap {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 简化顶部栏 */
+        .mobile-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            color: #fff;
+            padding: 20px 16px 24px;
+            text-align: center;
+            border-radius: 0 0 20px 20px;
+        }
+
+        .mobile-header .brand {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .mobile-header .sub-title {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .mobile-body {
+            flex: 1;
+            padding: 20px 16px;
+        }
+
+        /* 课程信息卡片 */
+        .course-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            padding: 18px;
+            margin-bottom: 16px;
+            border: 1px solid #f0f0f0;
+        }
+
+        .course-card .label {
+            font-size: 0.78rem;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        .course-card .course-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #222;
+            margin-bottom: 10px;
+            line-height: 1.4;
+            word-break: break-all;
+        }
+
+        .course-card .course-desc {
+            font-size: 0.88rem;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+
+        /* 进度信息 */
+        .progress-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            padding: 16px 18px;
+            margin-bottom: 16px;
+            border: 1px solid #f0f0f0;
+        }
+
+        .progress-card .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .progress-card .progress-label .pct {
+            font-weight: 700;
+            color: #0d6efd;
+        }
+
+        .progress {
+            height: 10px;
+            border-radius: 6px;
+            background: #e9ecef;
+        }
+
+        .progress-bar {
+            border-radius: 6px;
+            background: linear-gradient(90deg, #0d6efd, #3d8bfd);
+        }
+
+        .progress-meta {
+            font-size: 0.78rem;
+            color: #999;
+            margin-top: 8px;
+            margin-bottom: 0;
+        }
+
+        /* 提示信息 */
+        .checkin-tip {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            font-size: 0.86rem;
+            color: #856404;
+            line-height: 1.6;
+        }
+
+        .checkin-tip i {
+            color: #f0ad4e;
+            margin-right: 4px;
+        }
+
+        /* 签到按钮 */
+        .btn-checkin {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            border-radius: 12px;
+            text-align: center;
+            text-decoration: none;
+            box-shadow: 0 4px 14px rgba(40, 167, 69, 0.35);
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+
+        .btn-checkin:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.35);
+        }
+
+        .btn-checkin i {
+            font-size: 1.2rem;
+            margin-right: 6px;
+        }
+
+        .btn-back {
+            display: block;
+            width: 100%;
+            margin-top: 12px;
+            padding: 12px;
+            font-size: 0.95rem;
+            color: #6c757d;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        /* 底部说明 */
+        .mobile-footer {
+            text-align: center;
+            padding: 16px;
+            font-size: 0.75rem;
+            color: #bbb;
+        }
+
+        .signer-info {
+            text-align: center;
+            font-size: 0.82rem;
+            color: #999;
+            margin-bottom: 16px;
+        }
+
+        .signer-info .name {
+            color: #555;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+<div class="mobile-wrap">
+    <!-- 简化顶部栏 -->
+    <div class="mobile-header">
+        <div class="brand"><i class="bi bi-mortarboard-fill"></i> {{ SYSTEM_NAME }}</div>
+        <div class="sub-title">课程签到</div>
+    </div>
+
+    <div class="mobile-body">
+        <!-- 当前签到人 -->
+        <div class="signer-info">
+            当前签到人：<span class="name">{{ request.user.get_full_name|default:request.user.username }}</span>
+        </div>
+
+        <!-- 课程信息 -->
+        <div class="course-card">
+            <div class="label">课程名称</div>
+            <div class="course-title">{{ course.title }}</div>
+            {% if course.description %}
+            <div class="label mt-2">课程简介</div>
+            <p class="course-desc">{{ course.description|truncatechars:120 }}</p>
+            {% endif %}
+        </div>
+
+        <!-- 学习进度 -->
+        <div class="progress-card">
+            <div class="progress-label">
+                <span>学习进度</span>
+                <span class="pct">{{ progress.overall_progress }}%</span>
+            </div>
+            <div class="progress">
+                <div class="progress-bar" role="progressbar"
+                     style="width: {{ progress.overall_progress }}%"
+                     aria-valuenow="{{ progress.overall_progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <p class="progress-meta">
+                <i class="bi bi-play-circle"></i> 视频：{{ progress.video_progress }}%
+                &nbsp;|&nbsp;
+                <i class="bi bi-folder2-open"></i> 资料：{{ progress.materials_viewed.count }} 个
+            </p>
+        </div>
+
+        <!-- 提示 -->
+        <div class="checkin-tip">
+            <i class="bi bi-info-circle-fill"></i> 请在手机上完成手写签名，签名后将自动确认完成本课程学习。
+        </div>
+
+        <!-- 签到按钮 -->
+        <a href="{{ signature_pad_url }}" class="btn-checkin">
+            <i class="bi bi-pen-fill"></i> 去签名签到
+        </a>
+
+        <a href="javascript:history.back();" class="btn-back">
+            <i class="bi bi-arrow-left"></i> 返回
+        </a>
+    </div>
+
+    <div class="mobile-footer">
+        签名具有法律效力，请认真手写签名
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}颁发证书 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .user-checkbox-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'users:dashboard' %}">首页</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'certificates:list' %}">证书列表</a></li>
+        <li class="breadcrumb-item active">颁发证书</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block page_header %}
+<h4 class="mb-4"><i class="bi bi-patch-check me-2"></i>颁发证书</h4>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" id="issueForm">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="course" class="form-label fw-semibold">选择课程 <span class="text-danger">*</span></label>
+                        <select class="form-select" id="course" name="course" required>
+                            <option value="">-- 请选择课程 --</option>
+                            {% for course in courses %}
+                            <option value="{{ course.pk }}">{{ course.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="template" class="form-label fw-semibold">选择证书模板 <span class="text-danger">*</span></label>
+                        <select class="form-select" id="template" name="template" required>
+                            <option value="">-- 请选择模板 --</option>
+                            {% for tmpl in templates %}
+                            <option value="{{ tmpl.pk }}">{{ tmpl.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            选择用户 <span class="text-danger">*</span>
+                            <small class="text-muted fw-normal ms-2">
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" id="selectAllBtn">
+                                    <i class="bi bi-check-all"></i> 全选
+                                </button>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" id="deselectAllBtn">
+                                    <i class="bi bi-x-square"></i> 取消全选
+                                </button>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" id="loadUsersBtn">
+                                    <i class="bi bi-arrow-clockwise"></i> 加载用户列表
+                                </button>
+                            </small>
+                        </label>
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" id="userSearch" placeholder="搜索用户（姓名/工号/部门）...">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        </div>
+                        <div class="user-checkbox-list" id="userList">
+                            <p class="text-muted text-center py-3 mb-0">
+                                <i class="bi bi-info-circle me-1"></i>请先选择课程，然后点击"加载用户列表"
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'certificates:list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-1"></i>取消
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-patch-check me-1"></i>颁发证书
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const userList = document.getElementById('userList');
+    const courseSelect = document.getElementById('course');
+    const userSearch = document.getElementById('userSearch');
+    const loadUsersBtn = document.getElementById('loadUsersBtn');
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    const deselectAllBtn = document.getElementById('deselectAllBtn');
+
+    loadUsersBtn.addEventListener('click', function() {
+        const courseId = courseSelect.value;
+        if (!courseId) {
+            alert('请先选择课程');
+            return;
+        }
+        userList.innerHTML = '<p class="text-muted text-center py-3 mb-0"><i class="bi bi-arrow-repeat spin"></i> 加载中...</p>';
+
+        fetch(`/certificates/issue/?course_id=${courseId}&load_users=1`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.users && data.users.length > 0) {
+                    userList.innerHTML = data.users.map(u =>
+                        `<div class="form-check user-item" data-name="${u.name}" data-dept="${u.department}">
+                            <input class="form-check-input" type="checkbox" name="users" value="${u.id}" id="user_${u.id}">
+                            <label class="form-check-label" for="user_${u.id}">
+                                ${u.name} <small class="text-muted">(${u.employee_id || u.username}) - ${u.department || '未分配'}</small>
+                            </label>
+                        </div>`
+                    ).join('');
+                } else {
+                    userList.innerHTML = '<p class="text-muted text-center py-3 mb-0">该课程暂无已完成的用户</p>';
+                }
+            })
+            .catch(() => {
+                userList.innerHTML = '<p class="text-danger text-center py-3 mb-0">加载失败，请重试</p>';
+            });
+    });
+
+    if (userSearch) {
+        userSearch.addEventListener('input', function() {
+            const keyword = this.value.toLowerCase();
+            document.querySelectorAll('.user-item').forEach(item => {
+                const name = (item.dataset.name || '').toLowerCase();
+                const dept = (item.dataset.dept || '').toLowerCase();
+                item.style.display = (name.includes(keyword) || dept.includes(keyword)) ? '' : 'none';
+            });
+        });
+    }
+
+    selectAllBtn.addEventListener('click', function() {
+        userList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+    });
+
+    deselectAllBtn.addEventListener('click', function() {
+        userList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    });
+});
+</script>
+{% endblock %}

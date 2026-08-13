@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}批量导入用户 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-file-earmark-excel"></i> Excel批量导入用户</h4>
+            </div>
+            <div class="card-body">
+                <!-- 使用说明 -->
+                <div class="alert alert-info mb-4">
+                    <h6 class="alert-heading"><i class="bi bi-info-circle"></i> 使用说明</h6>
+                    <ul class="mb-0">
+                        <li>请上传 <strong>.xlsx</strong> 或 <strong>.xls</strong> 格式的 Excel 文件</li>
+                        <li>文件大小不超过 <strong>10MB</strong></li>
+                        <li>Excel第一行为表头，从第二行开始为数据</li>
+                    </ul>
+                    <hr>
+                    <h6>表头格式要求（加粗为必填列）：</h6>
+                    <table class="table table-sm table-bordered mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>工号 *</th>
+                                <th>用户名 *</th>
+                                <th>姓名</th>
+                                <th>名字</th>
+                                <th>邮箱</th>
+                                <th>手机号</th>
+                                <th>部门编码</th>
+                                <th>角色编码</th>
+                                <th>职位</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>EMP001</td>
+                                <td>zhangsan</td>
+                                <td>张</td>
+                                <td>三</td>
+                                <td>zhangsan@example.com</td>
+                                <td>13800138000</td>
+                                <td>tech</td>
+                                <td>student</td>
+                                <td>工程师</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <hr>
+                    <p class="mb-0">
+                        <small class="text-muted">
+                            <strong>角色编码说明：</strong>admin=管理员, training_manager=培训管理员, student=学员<br>
+                            <strong>部门编码：</strong>需与系统中已存在的部门编码一致<br>
+                            <strong>默认密码：</strong>新创建的用户默认密码为其工号
+                        </small>
+                    </p>
+                </div>
+
+                <!-- 上传表单 -->
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="id_excel_file" class="form-label">选择Excel文件</label>
+                        {{ form.excel_file }}
+                        {% if form.excel_file.errors %}
+                        <div class="text-danger small mt-1">{{ form.excel_file.errors.0 }}</div>
+                        {% endif %}
+                        <div class="form-text">{{ form.excel_file.help_text }}</div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-upload"></i> 开始导入
+                        </button>
+                        <a href="{% url 'users:user_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> 返回用户列表
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

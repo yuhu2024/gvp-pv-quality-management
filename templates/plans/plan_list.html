@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}培训计划 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12 d-flex justify-content-between align-items-center">
+        <h4><i class="bi bi-clipboard2-check"></i> 培训计划</h4>
+        <a href="{% url 'plans:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> 创建计划
+        </a>
+    </div>
+</div>
+
+<!-- 筛选 -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <select name="status" class="form-select">
+                    <option value="">全部状态</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel"></i> 筛选
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 计划列表 -->
+<div class="row">
+    {% for plan in plans %}
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ plan.title }}</h5>
+                <p class="card-text text-muted small">
+                    {{ plan.description|truncatechars:100 }}
+                </p>
+                <div class="d-flex gap-2 mb-2">
+                    <span class="badge {% if plan.status == 'in_progress' %}bg-success{% elif plan.status == 'completed' %}bg-secondary{% elif plan.status == 'expired' %}bg-danger{% else %}bg-warning{% endif %}">
+                        {{ plan.get_status_display }}
+                    </span>
+                    {% if plan.is_mandatory %}
+                    <span class="badge bg-danger"><i class="bi bi-exclamation-circle"></i> 强制培训</span>
+                    {% endif %}
+                </div>
+                <ul class="list-unstyled small text-muted">
+                    <li><i class="bi bi-calendar"></i> {{ plan.start_date }} ~ {{ plan.end_date }}</li>
+                    <li><i class="bi bi-list-task"></i> {{ plan.tasks.count }} 个任务</li>
+                    <li><i class="bi bi-person"></i> 创建者：{{ plan.creator|default:"-" }}</li>
+                </ul>
+            </div>
+            <div class="card-footer bg-transparent">
+                <div class="d-flex gap-2">
+                    <a href="{% url 'plans:detail' plan.pk %}" class="btn btn-sm btn-outline-primary flex-fill">
+                        查看详情
+                    </a>
+                    <a href="{% url 'plans:edit' plan.pk %}" class="btn btn-sm btn-outline-secondary">
+                        编辑
+                    </a>
+                    <a href="{% url 'plans:assign' plan.pk %}" class="btn btn-sm btn-outline-info">
+                        分配任务
+                    </a>
+                    {% if plan.is_mandatory %}
+                    <a href="{% url 'plans:mandatory_trainee' plan.pk %}" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-people"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">暂无培训计划。</div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 分页 -->
+{% if is_paginated %}
+<nav aria-label="计划分页">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
+        </li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+        </li>
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

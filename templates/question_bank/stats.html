@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}题库统计 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.stat-card { background: #f8f9fa; border-radius: 12px; padding: 24px; text-align: center; }
+.stat-number { font-size: 2.5rem; font-weight: 800; }
+.stat-label { font-size: 0.9rem; color: #666; margin-top: 4px; }
+.chart-bar { height: 30px; border-radius: 4px; margin-bottom: 8px; display: flex; align-items: center; padding-left: 8px; color: #fff; font-weight: 600; font-size: 0.85rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between">
+                <h4 class="mb-0"><i class="bi bi-bar-chart"></i> 题库统计</h4>
+                <a href="{% url 'question_bank:list' %}" class="btn btn-sm btn-secondary">返回题库</a>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3"><div class="stat-card"><div class="stat-number text-primary">{{ stats.total }}</div><div class="stat-label">总题数</div></div></div>
+            <div class="col-md-3"><div class="stat-card"><div class="stat-number text-success">{{ stats.active }}</div><div class="stat-label">启用题目</div></div></div>
+            <div class="col-md-3"><div class="stat-card"><div class="stat-number text-warning">{{ stats.by_type|length }}</div><div class="stat-label">题型种类</div></div></div>
+            <div class="col-md-3"><div class="stat-card"><div class="stat-number text-info">{{ stats.by_kp|length }}</div><div class="stat-label">覆盖知识点</div></div></div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header"><h6 class="mb-0">按题型分布</h6></div>
+                    <div class="card-body">
+                        {% for type, count in stats.by_type.items %}
+                        <div class="d-flex align-items-center mb-2">
+                            <span style="width: 100px;">{{ type }}</span>
+                            <div class="flex-grow-1 mx-2" style="background: #e9ecef; border-radius: 4px; height: 24px;">
+                                <div style="width: {% widthratio count stats.total 100 %}%; background: #4472C4; border-radius: 4px; height: 100%; min-width: 2px;"></div>
+                            </div>
+                            <span style="width: 40px; text-align: right;">{{ count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header"><h6 class="mb-0">按难度分布</h6></div>
+                    <div class="card-body">
+                        {% for diff, count in stats.by_difficulty.items %}
+                        <div class="d-flex align-items-center mb-2">
+                            <span style="width: 100px;">{{ diff }}</span>
+                            <div class="flex-grow-1 mx-2" style="background: #e9ecef; border-radius: 4px; height: 24px;">
+                                <div style="width: {% widthratio count stats.total 100 %}%; background: {% if diff == 'easy' %}#28a745{% elif diff == 'medium' %}#fd7e14{% else %}#dc3545{% endif %}; border-radius: 4px; height: 100%; min-width: 2px;"></div>
+                            </div>
+                            <span style="width: 40px; text-align: right;">{{ count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header"><h6 class="mb-0">热门知识点 TOP 10</h6></div>
+                    <div class="card-body">
+                        {% for item in stats.by_kp %}
+                        <div class="d-flex align-items-center mb-2">
+                            <span style="width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ item.name }}</span>
+                            <div class="flex-grow-1 mx-2" style="background: #e9ecef; border-radius: 4px; height: 24px;">
+                                <div style="width: {% widthratio item.c stats.by_kp.0.c 100 %}%; background: #6f42c1; border-radius: 4px; height: 100%; min-width: 2px;"></div>
+                            </div>
+                            <span style="width: 40px; text-align: right;">{{ item.c }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header"><h6 class="mb-0">热门标签</h6></div>
+                    <div class="card-body">
+                        {% for tag, count in stats.top_tags %}
+                        <span style="background: #e9ecef; padding: 4px 12px; border-radius: 12px; margin: 3px; display: inline-block; font-size: 0.9rem;">
+                            {{ tag }} <strong>{{ count }}</strong>
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

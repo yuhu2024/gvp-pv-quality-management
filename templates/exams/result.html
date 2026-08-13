@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}考试结果 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <!-- 成绩概览 -->
+        <div class="card mb-4 text-center">
+            <div class="card-body p-5">
+                <h4>{{ exam.title }} - 考试结果</h4>
+                <div class="my-4">
+                    <h1 class="{% if attempt.is_passed %}text-success{% else %}text-danger{% endif %}">
+                        {{ attempt.score }} / {{ exam.total_score }}
+                    </h1>
+                    <p class="lead">
+                        {% if attempt.is_passed %}
+                        <span class="text-success"><i class="bi bi-check-circle-fill"></i> 恭喜通过！</span>
+                        {% else %}
+                        <span class="text-danger"><i class="bi bi-x-circle-fill"></i> 未通过，请继续努力。</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <ul class="list-unstyled text-muted">
+                    <li>及格分数：{{ exam.pass_score }}分</li>
+                    <li>考试状态：{{ attempt.get_status_display }}</li>
+                    <li>开始时间：{{ attempt.start_time|date:"Y-m-d H:i:s" }}</li>
+                    {% if attempt.end_time %}
+                    <li>结束时间：{{ attempt.end_time|date:"Y-m-d H:i:s" }}</li>
+                    {% endif %}
+                </ul>
+
+                {% if signature %}
+                <div class="mt-3 p-3 border rounded bg-light">
+                    <p class="mb-2"><i class="bi bi-pen-fill text-success"></i> <strong>电子签名确认</strong></p>
+                    <div class="d-flex align-items-center justify-content-center gap-3 flex-wrap">
+                        <img src="{{ signature.signature_image.url }}" alt="签名" class="border rounded" style="max-height: 80px; background: #fff;">
+                        <div class="text-start small">
+                            <p class="mb-1">签名者：{{ signature.signed_by }}</p>
+                            <p class="mb-0">签名时间：{{ signature.signed_at|date:"Y-m-d H:i:s" }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 答题详情 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-list-check"></i> 答题详情</h5>
+            </div>
+            <div class="card-body">
+                {% for answer in answers %}
+                <div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                    <h6>
+                        {% if answer.is_correct == True %}
+                        <span class="badge bg-success">正确</span>
+                        {% elif answer.is_correct == False %}
+                        <span class="badge bg-danger">错误</span>
+                        {% else %}
+                        <span class="badge bg-warning text-dark">待评分</span>
+                        {% endif %}
+                        {{ forloop.counter }}. {{ answer.question.question_text }}
+                        <small class="text-muted">（{{ answer.question.score }}分，得{{ answer.score|default:0 }}分）</small>
+                    </h6>
+                    <p class="text-muted">您的答案：{{ answer.user_answer|default:"未作答" }}</p>
+                    {% if answer.is_correct != None %}
+                    <p class="text-success">正确答案：{{ answer.question.correct_answer }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="mt-3 d-flex gap-2">
+            <a href="{% url 'exams:list' %}" class="btn btn-primary">返回考试列表</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

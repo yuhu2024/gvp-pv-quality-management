@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}创建考试 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.exam-paper-preview {
+    background: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+    cursor: pointer;
+}
+.exam-paper-preview:hover,
+.exam-paper-preview.drag-over {
+    border-color: #0d6efd;
+    background: #e7f1ff;
+}
+.exam-paper-preview .icon {
+    font-size: 3rem;
+    color: #6c757d;
+}
+.exam-paper-preview.has-file {
+    border-style: solid;
+    border-color: #198754;
+    background: #f0fdf4;
+}
+.exam-paper-preview.has-file .icon { color: #198754; }
+.file-info { margin-top: 10px; }
+.file-info .name { font-weight: 600; color: #333; }
+.file-info .size { font-size: 0.85rem; color: #666; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-plus-circle"></i> 创建考试
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" id="examForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="title" class="form-label">考试标题 <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control" required placeholder="请输入考试标题">
+                    </div>
+                    <div class="mb-3">
+                        <label for="course" class="form-label">关联课程</label>
+                        <select name="course" class="form-select">
+                            <option value="">不关联课程</option>
+                            {% for c in courses %}
+                            <option value="{{ c.id }}">{{ c.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">考试说明</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="请输入考试说明"></textarea>
+                    </div>
+
+                    <!-- 考试试卷上传 -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-file-earmark-pdf"></i> 考试试卷
+                            <small class="text-muted">（可选，支持PDF/Word/PPT，考生答题时可查看）</small>
+                        </label>
+                        <div class="exam-paper-preview" id="paperDropZone" onclick="document.getElementById('examPaper').click()">
+                            <div class="icon"><i class="bi bi-cloud-arrow-up"></i></div>
+                            <p class="mb-1 text-muted">点击或拖拽文件到此区域上传考试试卷</p>
+                            <p class="small text-muted">支持 PDF、Word(.docx)、PPT(.pptx) 格式，最大 50MB</p>
+                        </div>
+                        <div id="paperFileInfo" class="file-info d-none">
+                            <span class="name" id="paperFileName"></span>
+                            <span class="size ms-2" id="paperFileSize"></span>
+                            <button type="button" class="btn btn-sm btn-outline-danger ms-3" id="removePaper">
+                                <i class="bi bi-x-circle"></i> 移除
+                            </button>
+                        </div>
+                        <input type="file" name="exam_paper" id="examPaper" class="d-none" accept=".pdf,.doc,.docx,.ppt,.pptx">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="duration" class="form-label">考试时长（分钟）</label>
+                            <input type="number" name="duration" class="form-control" value="60" min="1">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="total_score" class="form-label">总分</label>
+                            <input type="number" name="total_score" class="form-control" value="100" min="1">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="pass_score" class="form-label">及格分数</label>
+                            <input type="number" name="pass_score" class="form-control" value="60" min="0">
+                        </div>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" name="is_published" class="form-check-input" id="is_published">
+                        <label for="is_published" class="form-check-label">立即发布</label>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> 创建
+                        </button>
+                        <a href="{% url 'exams:list' %}" class="btn btn-secondary">取消</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var dropZone = document.getElementById('paperDropZone');
+    var fileInput = document.getElementById('examPaper');
+    var fileInfo = document.getElementById('paperFileInfo');
+    var fileName = document.getElementById('paperFileName');
+    var fileSize = document.getElementById('paperFileSize');
+    var removeBtn = document.getElementById('removePaper');
+
+    // 格式化文件大小
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // 处理文件选择
+    function handleFile(file) {
+        if (!file) return;
+        var allowed = ['application/pdf', 'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation'];
+        // 通过扩展名也做检查
+        var ext = file.name.split('.').pop().toLowerCase();
+        var validExt = ['pdf', 'doc', 'docx', 'ppt', 'pptx'];
+
+        if (!validExt.includes(ext)) {
+            alert('不支持该文件格式，请上传 PDF/Word/PPT 文件。');
+            return;
+        }
+        if (file.size > 50 * 1024 * 1024) {
+            alert('文件大小不能超过 50MB。');
+            return;
+        }
+
+        // 创建 DataTransfer 设置 file input
+        var dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+
+        dropZone.classList.add('has-file');
+        dropZone.querySelector('.icon').innerHTML = '<i class="bi bi-file-earmark-check"></i>';
+        dropZone.querySelector('p').textContent = file.name;
+        fileInfo.classList.remove('d-none');
+        fileName.textContent = file.name;
+        fileSize.textContent = formatSize(file.size);
+    }
+
+    // 文件选择事件
+    fileInput.addEventListener('change', function() {
+        handleFile(this.files[0]);
+    });
+
+    // 拖拽事件
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', function() {
+        dropZone.classList.remove('drag-over');
+    });
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        if (e.dataTransfer.files.length) {
+            handleFile(e.dataTransfer.files[0]);
+        }
+    });
+
+    // 移除文件
+    removeBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        fileInput.value = '';
+        dropZone.classList.remove('has-file');
+        dropZone.querySelector('.icon').innerHTML = '<i class="bi bi-cloud-arrow-up"></i>';
+        dropZone.querySelector('p').textContent = '点击或拖拽文件到此区域上传考试试卷';
+        fileInfo.classList.add('d-none');
+    });
+})();
+</script>
+{% endblock %}

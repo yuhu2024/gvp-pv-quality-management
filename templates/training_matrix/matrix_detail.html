@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ matrix.title }} - 培训矩阵详情 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-header {
+        background: linear-gradient(135deg, #0d6efd, #0a58ca);
+        color: #fff;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 20px;
+    }
+    .detail-header h4 { margin-bottom: 4px; }
+    .detail-header .meta { opacity: 0.85; font-size: 0.9rem; }
+
+    .table-matrix th {
+        background: #f8f9fa;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+    .table-matrix td {
+        font-size: 0.88rem;
+        vertical-align: middle;
+    }
+    .status-badge {
+        display: inline-block;
+        min-width: 60px;
+        text-align: center;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.78rem;
+        font-weight: 500;
+    }
+    .status-completed { background: #d1e7dd; color: #0f5132; }
+    .status-in_progress { background: #cff4fc; color: #055160; }
+    .status-pending { background: #e2e3e5; color: #41464b; }
+    .status-overdue { background: #f8d7da; color: #842029; }
+
+    .progress-bar-cell {
+        min-width: 120px;
+    }
+    .progress-bar-cell .progress {
+        height: 6px;
+        border-radius: 3px;
+    }
+
+    .action-btn-group {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'training_matrix:list' %}">培训矩阵</a></li>
+            <li class="breadcrumb-item active">{{ matrix.title }}</li>
+        </ol>
+    </nav>
+
+    <!-- 头部信息 -->
+    <div class="detail-header d-flex justify-content-between align-items-center">
+        <div>
+            <h4><i class="bi bi-grid-3x3-gap-fill"></i> {{ matrix.title }}</h4>
+            <div class="meta">
+                <span class="me-3"><i class="bi bi-building"></i> {{ matrix.department.name }}</span>
+                <span class="me-3"><i class="bi bi-book"></i> {{ matrix.items.count }} 门必修课程</span>
+                <span class="me-3"><i class="bi bi-people"></i> {{ user_progress_list|length }} 人</span>
+                {% if matrix.is_active %}
+                <span class="badge bg-success">已启用</span>
+                {% else %}
+                <span class="badge bg-secondary">已停用</span>
+                {% endif %}
+            </div>
+            {% if matrix.description %}
+            <p class="mb-0 mt-2 small opacity-75">{{ matrix.description }}</p>
+            {% endif %}
+        </div>
+        <div class="action-btn-group">
+            <a href="{% url 'training_matrix:edit' matrix.pk %}" class="btn btn-light btn-sm">
+                <i class="bi bi-pencil"></i> 编辑
+            </a>
+            <a href="{% url 'training_matrix:assign' matrix.pk %}" class="btn btn-light btn-sm">
+                <i class="bi bi-person-plus"></i> 分配
+            </a>
+            <a href="{% url 'training_matrix:sync_progress' matrix.pk %}" class="btn btn-light btn-sm">
+                <i class="bi bi-arrow-repeat"></i> 同步进度
+            </a>
+            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 矩阵课程列表 -->
+    <div class="card mb-3">
+        <div class="card-header bg-white">
+            <h6 class="mb-0"><i class="bi bi-list-check text-primary"></i> 矩阵课程</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-matrix mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>课程名称</th>
+                            <th>岗位</th>
+                            <th>必修</th>
+                            <th>完成期限</th>
+                            <th>优先级</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in matrix.items.all %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <a href="{% url 'courses:detail' item.course.pk %}" class="text-decoration-none">
+                                    {{ item.course.title }}
+                                </a>
+                            </td>
+                            <td>{{ item.position_display_name }}</td>
+                            <td>
+                                {% if item.is_required %}
+                                <span class="text-danger"><i class="bi bi-check-circle-fill"></i> 必修</span>
+                                {% else %}
+                                <span class="text-muted">选修</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.required_months }} 个月</td>
+                            <td>
+                                {% if item.priority == 1 %}<span class="badge bg-danger">高</span>
+                                {% elif item.priority == 2 %}<span class="badge bg-warning text-dark">中</span>
+                                {% else %}<span class="badge bg-secondary">低</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">暂无课程配置</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 人员完成进度 -->
+    <div class="card">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="bi bi-people text-primary"></i> 人员完成进度</h6>
+            <span class="text-muted small">共 {{ user_progress_list|length }} 人</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                <table class="table table-hover table-matrix mb-0">
+                    <thead>
+                        <tr>
+                            <th>姓名</th>
+                            <th>工号</th>
+                            <th>岗位</th>
+                            <th>完成进度</th>
+                            <th>状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for up in user_progress_list %}
+                        <tr>
+                            <td>
+                                <strong>{{ up.user.get_full_name|default:up.user.username }}</strong>
+                            </td>
+                            <td>{{ up.user.employee_id|default:'-' }}</td>
+                            <td>{{ up.user.position|default:'-' }}</td>
+                            <td class="progress-bar-cell">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>{{ up.completed }}/{{ up.total }}</span>
+                                    <span>{{ up.progress_pct }}%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar {% if up.progress_pct == 100 %}bg-success{% elif up.progress_pct >= 50 %}bg-primary{% else %}bg-warning{% endif %}"
+                                         style="width: {{ up.progress_pct }}%"></div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if up.completed == up.total %}
+                                <span class="status-badge status-completed"><i class="bi bi-check-circle"></i> 已完成</span>
+                                {% elif up.overdue > 0 %}
+                                <span class="status-badge status-overdue"><i class="bi bi-exclamation-circle"></i> 逾期{{ up.overdue }}项</span>
+                                {% elif up.completed > 0 %}
+                                <span class="status-badge status-in_progress"><i class="bi bi-arrow-repeat"></i> 进行中</span>
+                                {% else %}
+                                <span class="status-badge status-pending"><i class="bi bi-clock"></i> 未开始</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                {% if matrix.department.user_set.exists %}
+                                尚未分配，<a href="{% url 'training_matrix:assign' matrix.pk %}">立即分配</a>
+                                {% else %}
+                                该部门暂无用户
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认弹窗 -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">确认删除</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除培训矩阵「{{ matrix.title }}」吗？</p>
+                <p class="text-danger small mb-0">此操作不可恢复，所有关联数据将被删除。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">取消</button>
+                <form method="post" action="{% url 'training_matrix:delete' matrix.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

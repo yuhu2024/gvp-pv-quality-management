@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}生成考试 - {{ template.name }} - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-magic"></i> 自动生成考试</h4>
+            </div>
+            <div class="card-body">
+                <!-- 模板信息 -->
+                <div class="card bg-light mb-4">
+                    <div class="card-body">
+                        <h6 class="mb-3">{{ template.name }}</h6>
+                        {% if template.description %}<p class="text-muted mb-2">{{ template.description }}</p>{% endif %}
+                        <div class="row small">
+                            <div class="col-md-4">时长：{{ template.duration }} 分钟</div>
+                            <div class="col-md-4">及格分：{{ template.pass_score }} 分</div>
+                        </div>
+                        <hr>
+                        <p class="mb-0 small text-muted">出卷规则：</p>
+                        {% for rule in template.rules.all %}
+                        <div class="badge bg-secondary me-1 mb-1">
+                            {{ rule.get_question_type_display }} x{{ rule.count }}
+                            ({{ rule.score_per_question }}分/题, {{ rule.get_difficulty_display }})
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">考试标题 <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control" required placeholder="例如：{{ template.name }} - 2026年7月">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">关联课程</label>
+                        <select name="course" class="form-select">
+                            <option value="">不关联课程</option>
+                            {% for c in courses %}
+                            <option value="{{ c.id }}">{{ c.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" name="is_published" class="form-check-input" id="is_published">
+                        <label for="is_published" class="form-check-label">生成后立即发布</label>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        系统将从题库中随机抽取题目自动组卷。请确保题库中有足够的题目（每个规则至少需要对应数量的题目）。
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-magic"></i> 一键生成考试
+                        </button>
+                        <a href="{% url 'exams:paper_template_list' %}" class="btn btn-secondary">取消</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

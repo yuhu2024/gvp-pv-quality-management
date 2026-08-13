@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}AI 调用日志 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-journal-text"></i> AI 调用日志</h4>
+                <a href="{% url 'llm:providers' %}" class="btn btn-sm btn-secondary">返回模型配置</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>任务类型</th>
+                                <th>模型</th>
+                                <th>状态</th>
+                                <th>Token</th>
+                                <th>耗时</th>
+                                <th>调用者</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                            <tr>
+                                <td>{{ log.created_at|date:"m-d H:i:s" }}</td>
+                                <td><span class="badge bg-secondary">{{ log.get_task_type_display }}</span></td>
+                                <td>{{ log.provider.name|default:"-" }}</td>
+                                <td>
+                                    {% if log.is_success %}
+                                    <span class="text-success"><i class="bi bi-check-circle"></i></span>
+                                    {% else %}
+                                    <span class="text-danger" title="{{ log.error_message }}"><i class="bi bi-x-circle"></i></span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ log.total_tokens }}</td>
+                                <td>{{ log.duration_ms }}ms</td>
+                                <td>{{ log.created_by|default:"-" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="7" class="text-center text-muted">暂无调用记录</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

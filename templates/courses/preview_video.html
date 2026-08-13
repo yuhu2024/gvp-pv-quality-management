@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}预览 - {{ material.title }} - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .video-container { max-width: 900px; margin: 0 auto; }
+    .video-container video { width: 100%; max-height: 70vh; background: #000; }
+    .progress-bar-container {
+        background: #e9ecef; border-radius: 8px; height: 12px;
+        margin-top: 12px; overflow: hidden; cursor: default;
+    }
+    .progress-bar-fill {
+        height: 100%; border-radius: 8px;
+        background: linear-gradient(90deg, #4472C4, #5B9BD5);
+        transition: width 1s linear;
+    }
+    .progress-info {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-top: 6px; font-size: 0.85rem; color: #6c757d;
+    }
+    .completed-badge {
+        display: inline-flex; align-items: center; gap: 4px;
+        background: #d4edda; color: #155724; padding: 4px 12px;
+        border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-camera-video"></i> {{ material.title }}
+                </h5>
+                <div class="d-flex align-items-center gap-2">
+                    <span id="completedBadge" class="completed-badge d-none">
+                        <i class="bi bi-check-circle-fill"></i> 学习完成
+                    </span>
+                    <a href="{% url 'courses:detail' course.pk %}" class="btn btn-sm btn-secondary">返回课程</a>
+                    <a href="{% url 'courses:material_download' course.pk material.pk %}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-download"></i> 下载
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="video-container">
+            <video id="videoPlayer" controls>
+                <source src="{{ file_url }}" type="video/mp4">
+                您的浏览器不支持视频播放。
+            </video>
+
+            <!-- 视频进度条 -->
+            <div class="progress-bar-container">
+                <div id="progressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
+            </div>
+            <div class="progress-info">
+                <span>观看进度：<strong id="progressText">0%</strong></span>
+                <span id="timeInfo">00:00 / 00:00</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var video = document.getElementById('videoPlayer');
+    var progressBarFill = document.getElementById('progressBarFill');
+    var progressText = document.getElementById('progressText');
+    var timeInfo = document.getElementById('timeInfo');
+    var completedBadge = document.getElementById('completedBadge');
+    var materialPk = {{ material.pk }};
+    var reportInterval = null;
+    var threshold = 95; // 默认阈值
+    var isCompleted = false;
+
+    // 格式化时间
+    function formatTime(seconds) {
+        var m = Math.floor(seconds / 60);
+        var s = Math.floor(seconds % 60);
+        return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    }
+
+    // 更新UI显示
+    function updateUI(progress, completed) {
+        progressBarFill.style.width = progress + '%';
+        progressText.textContent = progress + '%';
+        isCompleted = completed;
+        if (completed) {
+            completedBadge.classList.remove('d-none');
+        }
+    }
+
+    // 上报视频进度到服务器
+    function reportProgress() {
+        if (!video.duration || isNaN(video.duration)) return;
+
+        var watchedSeconds = Math.floor(video.currentTime);
+        var totalSeconds = Math.floor(video.duration);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/courses/material/' + materialPk + '/video-progress/', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    threshold = data.threshold || 95;
+                    updateUI(data.progress, data.is_completed);
+                } catch(e) {}
+            }
+        };
+
+        xhr.send(JSON.stringify({
+            watched_seconds: watchedSeconds,
+            total_seconds: totalSeconds
+        }));
+    }
+
+    // 获取CSRF Token
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === name + '=') {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // 防拖动限制：不允许拖动超过已观看位置太多
+    var lastReportedTime = 0;
+
+    video.addEventListener('seeked', function() {
+        // 如果用户向前跳过太多（超过30秒），则恢复到之前的位置
+        if (video.currentTime > lastReportedTime + 30) {
+            video.currentTime = lastReportedTime;
+        }
+    });
+
+    video.addEventListener('timeupdate', function() {
+        // 更新时间信息显示
+        timeInfo.textContent = formatTime(video.currentTime) + ' / ' + formatTime(video.duration || 0);
+
+        // 更新最后上报时间（只允许顺序播放）
+        if (video.currentTime > lastReportedTime) {
+            lastReportedTime = video.currentTime;
+        }
+    });
+
+    // 视频加载后初始化
+    video.addEventListener('loadedmetadata', function() {
+        // 先获取已有进度
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/courses/material/' + materialPk + '/video-progress/', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    threshold = data.threshold || 95;
+                    updateUI(data.progress, data.is_completed);
+
+                    // 如果已有进度但未完成，从上次位置继续播放
+                    if (data.progress > 0 && !data.is_completed && video.duration) {
+                        var resumeTime = Math.floor(video.duration * data.progress / 100);
+                        video.currentTime = resumeTime;
+                        lastReportedTime = resumeTime;
+                    }
+                } catch(e) {}
+            }
+        };
+        // 发送初始请求以获取当前进度
+        xhr.send(JSON.stringify({
+            watched_seconds: 0,
+            total_seconds: Math.floor(video.duration || 0)
+        }));
+
+        // 启动定期上报（每10秒）
+        reportInterval = setInterval(reportProgress, 10000);
+    });
+
+    // 视频暂停时上报一次
+    video.addEventListener('pause', function() {
+        reportProgress();
+    });
+
+    // 视频结束时上报
+    video.addEventListener('ended', function() {
+        reportProgress();
+    });
+
+    // 页面离开时上报
+    window.addEventListener('beforeunload', function() {
+        // 使用 sendBeacon 确保页面关闭时也能发送
+        if (video.duration && !isNaN(video.duration)) {
+            var data = JSON.stringify({
+                watched_seconds: Math.floor(video.currentTime),
+                total_seconds: Math.floor(video.duration)
+            });
+            navigator.sendBeacon(
+                '/courses/material/' + materialPk + '/video-progress/',
+                new Blob([data], { type: 'application/json' })
+            );
+        }
+    });
+})();
+</script>
+{% endblock %}

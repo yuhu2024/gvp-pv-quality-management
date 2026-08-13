@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}{{ page_title|default:"课程分类" }} - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'courses:admin_dashboard' %}">管理中心</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'courses:admin_category_list' %}">课程分类管理</a></li>
+                <li class="breadcrumb-item active">{{ page_title|default:"课程分类" }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-tag"></i> {{ page_title|default:"课程分类" }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+
+                    <!-- 父分类 -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ form.parent.label }}
+                            <span class="text-muted small">（可选，用于创建子分类）</span>
+                        </label>
+                        {{ form.parent|attr:"class:form-select" }}
+                        {% if form.parent.help_text %}
+                        <small class="text-muted">{{ form.parent.help_text }}</small>
+                        {% endif %}
+                        {% if form.parent.errors %}
+                        <div class="text-danger small">{{ form.parent.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 分类名称 -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ form.name.label }}
+                            <span class="text-danger">*</span>
+                        </label>
+                        {{ form.name|attr:"class:form-control"|attr:"placeholder:请输入分类名称" }}
+                        {% if form.name.errors %}
+                        <div class="text-danger small">{{ form.name.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 分类编码 -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ form.code.label }}
+                        </label>
+                        {{ form.code|attr:"class:form-control"|attr:"placeholder:如 GMP、QC、SOP（可选）" }}
+                        {% if form.code.help_text %}
+                        <small class="text-muted">{{ form.code.help_text }}</small>
+                        {% endif %}
+                        {% if form.code.errors %}
+                        <div class="text-danger small">{{ form.code.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 描述 -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ form.description.label }}
+                        </label>
+                        {{ form.description|attr:"class:form-control"|attr:"rows:3"|attr:"placeholder:分类描述（可选）" }}
+                        {% if form.description.errors %}
+                        <div class="text-danger small">{{ form.description.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <!-- 排序 -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                {{ form.order.label }}
+                            </label>
+                            {{ form.order|attr:"class:form-control"|attr:"type:number"|attr:"min:0" }}
+                            <small class="text-muted">数值越小越靠前显示</small>
+                            {% if form.order.errors %}
+                            <div class="text-danger small">{{ form.order.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- 是否启用 -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                {{ form.is_active.label }}
+                            </label>
+                            <div class="form-check form-switch mt-2">
+                                {{ form.is_active|attr:"class:form-check-input" }}
+                                <label class="form-check-label" for="id_is_active">启用此分类</label>
+                            </div>
+                            {% if form.is_active.errors %}
+                            <div class="text-danger small">{{ form.is_active.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'courses:admin_category_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> 返回列表
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg"></i> 保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

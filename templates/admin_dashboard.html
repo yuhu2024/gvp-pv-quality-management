@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}管理中心 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item active">管理中心</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3><i class="bi bi-gear-fill"></i> 管理中心</h3>
+    <span class="text-muted">欢迎回来，{{ user.get_full_name|default:user.username }}</span>
+</div>
+
+<!-- 数据概览 -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-white bg-primary h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">课程分类</h6>
+                        <h2 class="mt-2 mb-0">{{ category_count }}</h2>
+                    </div>
+                    <i class="bi bi-tags" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+                <a href="{% url 'courses:admin_category_list' %}" class="text-white text-decoration-none small">
+                    管理分类 <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-white bg-success h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">课程总数</h6>
+                        <h2 class="mt-2 mb-0">{{ course_count }}</h2>
+                    </div>
+                    <i class="bi bi-book" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+                <a href="{% url 'courses:list' %}" class="text-white text-decoration-none small">
+                    查看课程 <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-white bg-info h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">考试总数</h6>
+                        <h2 class="mt-2 mb-0">{{ exam_count }}</h2>
+                    </div>
+                    <i class="bi bi-pencil-square" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+                <a href="{% url 'exams:list' %}" class="text-white text-decoration-none small">
+                    查看考试 <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-white bg-warning h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">活跃用户</h6>
+                        <h2 class="mt-2 mb-0">{{ user_count }}</h2>
+                    </div>
+                    <i class="bi bi-people" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+                <a href="{% url 'users:user_list' %}" class="text-white text-decoration-none small">
+                    用户管理 <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 基础配置 -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-sliders"></i> 基础配置</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'courses:admin_category_list' %}" class="text-decoration-none">
+                            <div class="card border h-100 text-center p-3 config-card">
+                                <i class="bi bi-tags text-primary" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2 mb-0">课程分类</h6>
+                                <small class="text-muted">管理课程分类体系</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/users/department/" class="text-decoration-none">
+                            <div class="card border h-100 text-center p-3 config-card">
+                                <i class="bi bi-diagram-3 text-success" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2 mb-0">部门管理</h6>
+                                <small class="text-muted">管理组织架构和部门</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'config:settings' %}" class="text-decoration-none">
+                            <div class="card border h-100 text-center p-3 config-card">
+                                <i class="bi bi-sliders text-info" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2 mb-0">系统参数</h6>
+                                <small class="text-muted">重考、评分等全局配置</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'llm:providers' %}" class="text-decoration-none">
+                            <div class="card border h-100 text-center p-3 config-card">
+                                <i class="bi bi-robot text-warning" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2 mb-0">大模型配置</h6>
+                                <small class="text-muted">AI 接口与模型管理</small>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 培训管理 -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> 强制培训</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <h3 class="text-danger">{{ mandatory_plan_count }}</h3>
+                        <small class="text-muted">强制培训计划</small>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="text-warning">{{ mandatory_trainee_count }}</h3>
+                        <small class="text-muted">强制参训人员</small>
+                    </div>
+                </div>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'plans:mandatory_overview' %}" class="btn btn-outline-danger">
+                        <i class="bi bi-eye"></i> 查看强制培训总览
+                    </a>
+                    <a href="{% url 'plans:create' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-lg"></i> 创建培训计划
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-clipboard2-check"></i> 培训计划</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <h3 class="text-primary">{{ plan_count }}</h3>
+                        <small class="text-muted">培训计划总数</small>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="text-success">{{ mandatory_plan_count }}</h3>
+                        <small class="text-muted">其中强制培训</small>
+                    </div>
+                </div>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'plans:list' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-list-ul"></i> 查看所有计划
+                    </a>
+                    <a href="{% url 'courses:review_list' %}" class="btn btn-outline-info">
+                        <i class="bi bi-check2-square"></i> 审核管理
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 数据管理 -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-bar-chart-line"></i> 数据管理</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'logs:admin_dashboard' %}" class="text-decoration-none">
+                            <div class="card border h-100 text-center p-3 config-card">
+                                <i class="bi bi-bar-chart-line text-primary" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2 mb-0">数据面板</h6>
+                                <small class="text-muted">培训数据可视化</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'logs:export_exam_scores' %}" class="text-decoration-none">
+                            <div class="card border h-100 text-center p-3 config-card">
+                                <i class="bi bi-file-earmark-excel text-success" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2 mb-0">导出成绩</h6>
+                                <small class="text-muted">考试成绩导出</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'logs:export_training_report' %}" class="text-decoration-none">
+                            <div class="card border h-100 text-center p-3 config-card">
+                                <i class="bi bi-file-earmark-bar-graph text-info" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2 mb-0">导出培训报告</h6>
+                                <small class="text-muted">培训完成情况</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'logs:operation_log' %}" class="text-decoration-none">
+                            <div class="card border h-100 text-center p-3 config-card">
+                                <i class="bi bi-journal-text text-warning" style="font-size: 2rem;"></i>
+                                <h6 class="mt-2 mb-0">操作日志</h6>
+                                <small class="text-muted">系统操作记录</small>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.config-card {
+    transition: all 0.2s;
+    cursor: pointer;
+}
+.config-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: var(--bs-primary);
+}
+</style>
+{% endblock %}

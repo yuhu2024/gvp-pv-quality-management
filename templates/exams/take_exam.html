@@ -1,0 +1,423 @@
+{% extends "base.html" %}
+
+{% block title %}{{ exam.title }} - 在线考试{% endblock %}
+
+{% block extra_css %}
+<style>
+    .question-card { margin-bottom: 20px; }
+    .question-card .card-body { padding: 20px; }
+    .option-label { margin-bottom: 8px; display: block; cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+    .option-label:hover { background-color: #f0f8ff; }
+
+    /* 试卷区域 */
+    .exam-paper-area {
+        background: #f8f9fa;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 20px;
+        border: 1px solid #dee2e6;
+    }
+    .exam-paper-header {
+        background: #e9ecef;
+        padding: 10px 16px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .exam-paper-body {
+        padding: 0;
+    }
+    .exam-paper-body iframe {
+        width: 100%;
+        height: 500px;
+        border: none;
+    }
+    .exam-paper-body .paper-placeholder {
+        padding: 40px;
+        text-align: center;
+        color: #666;
+    }
+
+    /* 答题留痕提示 */
+    .audit-badge {
+        position: fixed;
+        bottom: 20px; right: 20px;
+        background: rgba(0,0,0,0.7);
+        color: #fff;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        z-index: 1050;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-9">
+        <!-- 考试试卷展示 -->
+        {% if exam.exam_paper %}
+        <div class="exam-paper-area">
+            <div class="exam-paper-header">
+                <i class="bi bi-file-earmark-text"></i> 考试试卷
+                <span class="badge bg-secondary">{{ exam.exam_paper.name|default:"" }}</span>
+                <a href="{{ exam.exam_paper.url }}" class="btn btn-sm btn-outline-dark ms-auto" target="_blank">
+                    <i class="bi bi-box-arrow-up-right"></i> 新窗口打开
+                </a>
+            </div>
+            <div class="exam-paper-body">
+                {% if exam.exam_paper.url|lower|slice:"-4:" == '.pdf' %}
+                <iframe src="{{ exam.exam_paper.url }}" title="考试试卷"></iframe>
+                {% else %}
+                <div class="paper-placeholder">
+                    <i class="bi bi-file-earmark-word" style="font-size:3rem;color:#2b579a;"></i>
+                    <p class="mt-2">试卷文件已上传，点击下方按钮查看</p>
+                    <a href="{{ exam.exam_paper.url }}" class="btn btn-primary" target="_blank">
+                        <i class="bi bi-eye"></i> 查看试卷
+                    </a>
+                    <a href="{{ exam.exam_paper.url }}" class="btn btn-outline-primary" download>
+                        <i class="bi bi-download"></i> 下载试卷
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">{{ exam.title }}</h4>
+                <div>
+                    <span class="badge bg-danger" id="timer">
+                        剩余时间：{{ remaining_minutes|stringformat:"02d" }}:{{ remaining_seconds|stringformat:"02d" }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">{{ exam.description }}</p>
+                <small class="text-muted">
+                    总分：{{ exam.total_score }}分 | 及格：{{ exam.pass_score }}分 | 共 {{ questions|length }} 题
+                </small>
+            </div>
+        </div>
+
+        <form method="post" id="examForm">
+            {% csrf_token %}
+            {% if pending_signature %}
+            <input type="hidden" name="signature_id" value="{{ pending_signature.id }}">
+            {% endif %}
+            {% for question in questions %}
+            <div class="card question-card" id="question_{{ question.id }}" data-question-id="{{ question.id }}">
+                <div class="card-body">
+                    <h6>
+                        <span class="badge bg-primary">{{ forloop.counter }}</span>
+                        {{ question.question_text }}
+                        <small class="text-muted">（{{ question.score }}分，{{ question.get_question_type_display }}）</small>
+                    </h6>
+
+                    {% if question.question_type == 'single_choice' %}
+                    {% for key, value in question.get_options.items %}
+                    <label class="option-label">
+                        <input type="radio" name="question_{{ question.id }}" value="{{ key }}"
+                               {% if existing_answers|get_item:question.id == key %}checked{% endif %}>
+                        {{ key }}. {{ value }}
+                    </label>
+                    {% endfor %}
+
+                    {% elif question.question_type == 'multi_choice' %}
+                    {% for key, value in question.get_options.items %}
+                    <label class="option-label">
+                        <input type="checkbox" name="question_{{ question.id }}" value="{{ key }}"
+                               {% if key in existing_answers|get_item:question.id|split:',' %}checked{% endif %}>
+                        {{ key }}. {{ value }}
+                    </label>
+                    {% endfor %}
+
+                    {% elif question.question_type == 'true_false' %}
+                    <label class="option-label">
+                        <input type="radio" name="question_{{ question.id }}" value="True"
+                               {% if existing_answers|get_item:question.id == 'True' %}checked{% endif %}>
+                        正确
+                    </label>
+                    <label class="option-label">
+                        <input type="radio" name="question_{{ question.id }}" value="False"
+                               {% if existing_answers|get_item:question.id == 'False' %}checked{% endif %}>
+                        错误
+                    </label>
+
+                    {% elif question.question_type == 'fill_blank' %}
+                    <input type="text" name="question_{{ question.id }}" class="form-control"
+                           placeholder="请输入答案"
+                           value="{{ existing_answers|get_item:question.id|default:'' }}">
+
+                    {% elif question.question_type == 'essay' %}
+                    <textarea name="question_{{ question.id }}" class="form-control" rows="4"
+                              placeholder="请输入答案">{{ existing_answers|get_item:question.id|default:'' }}</textarea>
+                    <small class="text-muted">简答题需等待管理员手动评分。</small>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+
+            {% if pending_signature %}
+            <!-- 签名确认区域 -->
+            <div class="card mb-4 border-success">
+                <div class="card-header bg-success text-white">
+                    <i class="bi bi-pen-fill"></i> 电子签名已确认
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-4 text-center">
+                            <img src="{{ pending_signature.signature_image.url }}" alt="签名" class="img-fluid border rounded" style="max-height: 120px; background: #fff;">
+                        </div>
+                        <div class="col-md-8">
+                            <p class="mb-1"><strong>签名者：</strong>{{ pending_signature.signed_by }}</p>
+                            <p class="mb-1"><strong>签名时间：</strong>{{ pending_signature.signed_at|date:"Y-m-d H:i:s" }}</p>
+                            <p class="mb-0 text-muted small">签名具有法律效力，点击下方按钮正式提交考试。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                    <i class="bi bi-send"></i> {% if pending_signature %}确认提交考试{% else %}提交考试{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 侧边栏：答题卡 -->
+    <div class="col-md-3">
+        <div class="card sticky-top">
+            <div class="card-header">
+                <h6 class="mb-0">答题卡</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-1">
+                    {% for question in questions %}
+                    <span class="badge bg-light text-dark p-2" id="qbadge_{{ question.id }}" style="min-width: 36px;">
+                        {{ forloop.counter }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 答题留痕状态提示 -->
+<div class="audit-badge" id="auditBadge">
+    <i class="bi bi-shield-check"></i> 答题留痕已启用
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    // 倒计时功能 - 使用服务端计算的剩余时间
+    var totalSeconds = {{ remaining_minutes }} * 60 + {{ remaining_seconds }};
+    var timerEl = document.getElementById('timer');
+
+    function updateTimer() {
+        if (totalSeconds <= 0) {
+            timerEl.textContent = '时间到！';
+            document.getElementById('examForm').submit();
+            return;
+        }
+        var minutes = Math.floor(totalSeconds / 60);
+        var seconds = totalSeconds % 60;
+        timerEl.textContent = '剩余时间：' +
+            String(minutes).padStart(2, '0') + ':' +
+            String(seconds).padStart(2, '0');
+        totalSeconds--;
+    }
+
+    updateTimer();
+    var interval = setInterval(updateTimer, 1000);
+
+    // 答题卡高亮 - 监听表单变化
+    document.getElementById('examForm').addEventListener('change', function(e) {
+        var target = e.target;
+        if (target.name && target.name.startsWith('question_')) {
+            var questionId = target.name.replace('question_', '');
+            var badge = document.getElementById('qbadge_' + questionId);
+            if (badge) {
+                badge.classList.remove('bg-light', 'text-dark');
+                badge.classList.add('bg-success', 'text-white');
+            }
+        }
+    });
+
+    // 签名与提交流程
+    var hasSignature = {% if pending_signature %}true{% else %}false{% endif %};
+    var submitBtn = document.getElementById('submitBtn');
+    var examForm = document.getElementById('examForm');
+
+    if (!hasSignature) {
+        // 尚未签名：点击提交时先跳转去签名
+        submitBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!confirm('确定要提交考试吗？提交前需要在下一页进行电子签名确认。')) {
+                return;
+            }
+            // 保存表单数据到 sessionStorage
+            var formData = new FormData(examForm);
+            var dataObj = {};
+            for (var pair of formData.entries()) {
+                if (dataObj[pair[0]]) {
+                    if (!Array.isArray(dataObj[pair[0]])) {
+                        dataObj[pair[0]] = [dataObj[pair[0]]];
+                    }
+                    dataObj[pair[0]].push(pair[1]);
+                } else {
+                    dataObj[pair[0]] = pair[1];
+                }
+            }
+            sessionStorage.setItem('exam_{{ exam.id }}_answers', JSON.stringify(dataObj));
+
+            // 跳转到签名页面，签名后返回当前考试页面
+            var currentUrl = window.location.pathname;
+            var signatureUrl = '{% url "signatures:pad" %}?type=exam&target_type=examattempt&target_id={{ attempt.id }}&redirect_url=' + encodeURIComponent(currentUrl) + '&title=' + encodeURIComponent('考试签名确认 - {{ exam.title|escapejs }}');
+            window.location.href = signatureUrl;
+        });
+    } else {
+        // 已有签名：正常提交前确认
+        examForm.addEventListener('submit', function(e) {
+            if (!confirm('确定要正式提交考试吗？提交后无法修改。')) {
+                e.preventDefault();
+            }
+        });
+    }
+
+    // 页面加载时：如果有 sessionStorage 中保存的答案且 URL 中有 signature_id，恢复答案
+    (function restoreAnswers() {
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('signature_id')) {
+            var saved = sessionStorage.getItem('exam_{{ exam.id }}_answers');
+            if (saved) {
+                var answers = JSON.parse(saved);
+                for (var name in answers) {
+                    if (name === 'csrfmiddlewaretoken') continue;
+                    var inputs = examForm.querySelectorAll('[name="' + name + '"');
+                    var val = answers[name];
+                    if (inputs.length > 1) {
+                        // checkbox / radio 多选
+                        var vals = Array.isArray(val) ? val : [val];
+                        inputs.forEach(function(input) {
+                            input.checked = vals.indexOf(input.value) > -1;
+                        });
+                    } else if (inputs.length === 1) {
+                        inputs[0].value = val;
+                    }
+                }
+                // 清除已恢复的缓存
+                sessionStorage.removeItem('exam_{{ exam.id }}_answers');
+                // 触发答题卡高亮更新
+                examForm.dispatchEvent(new Event('change'));
+            }
+        }
+    })();
+
+    // ==================== 答题留痕（牵到留痕）====================
+    (function() {
+        var startTime = Date.now();
+        var attemptId = {{ attempt.id }};
+        var csrfToken = '{{ csrf_token }}';
+        var logApiUrl = '{% url "exams:answer_log_api" attempt.id %}';
+        var debounceTimers = {};
+        var lastValues = {};
+
+        // 获取当前已用秒数
+        function getElapsedSeconds() {
+            return Math.floor((Date.now() - startTime) / 1000);
+        }
+
+        // 发送留痕记录
+        function sendLog(questionId, newAnswer) {
+            var oldVal = lastValues[questionId] || '';
+            if (oldVal === newAnswer) return; // 无变化不记录
+            lastValues[questionId] = newAnswer;
+
+            fetch(logApiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({
+                    question_id: questionId,
+                    new_answer: newAnswer,
+                    elapsed_seconds: getElapsedSeconds(),
+                }),
+            }).then(function(res) {
+                if (res.ok) {
+                    // 留痕成功，显示短暂提示
+                    showAuditToast('已记录');
+                }
+            }).catch(function() {});
+        }
+
+        // 短暂显示留痕状态
+        var toastTimer = null;
+        function showAuditToast(msg) {
+            var badge = document.getElementById('auditBadge');
+            if (!badge) return;
+            badge.innerHTML = '<i class="bi bi-shield-check"></i> ' + msg;
+            badge.style.opacity = '1';
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function() {
+                badge.innerHTML = '<i class="bi bi-shield-check"></i> 答题留痕已启用';
+            }, 1500);
+        }
+
+        // 监听所有题目输入
+        document.querySelectorAll('.question-card').forEach(function(card) {
+            var qid = card.getAttribute('data-question-id');
+            if (!qid) return;
+
+            var inputs = card.querySelectorAll('input, textarea');
+            inputs.forEach(function(input) {
+                // 初始化 lastValues
+                if (input.type === 'checkbox') {
+                    // 多选题初始值
+                    var checked = card.querySelectorAll('input[type="checkbox"]:checked');
+                    var vals = Array.from(checked).map(function(c) { return c.value; }).sort().join(',');
+                    lastValues[qid] = vals;
+                } else if (input.type === 'radio') {
+                    var sel = card.querySelector('input[type="radio"]:checked');
+                    lastValues[qid] = sel ? sel.value : '';
+                } else {
+                    lastValues[qid] = input.value;
+                }
+
+                // change 事件（单选、复选框）
+                input.addEventListener('change', function() {
+                    var newAnswer = '';
+                    if (input.type === 'checkbox') {
+                        var checkedBoxes = card.querySelectorAll('input[type="checkbox"]:checked');
+                        newAnswer = Array.from(checkedBoxes).map(function(c) { return c.value; }).sort().join(',');
+                    } else if (input.type === 'radio') {
+                        var selRadio = card.querySelector('input[type="radio"]:checked');
+                        newAnswer = selRadio ? selRadio.value : '';
+                    }
+                    sendLog(qid, newAnswer);
+                });
+
+                // input 事件（文本框、文本域）- 防抖 2 秒
+                if (input.type === 'text' || input.tagName === 'TEXTAREA') {
+                    input.addEventListener('input', function() {
+                        clearTimeout(debounceTimers[qid]);
+                        debounceTimers[qid] = setTimeout(function() {
+                            sendLog(qid, input.value);
+                        }, 2000);
+                    });
+                }
+            });
+        });
+    })();
+})();
+</script>
+{% endblock %}

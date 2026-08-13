@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}培训矩阵管理 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .matrix-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        transition: all 0.2s ease;
+    }
+    .matrix-card:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    .matrix-card .card-header {
+        background: linear-gradient(135deg, #0d6efd, #0a58ca);
+        color: #fff;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 16px 20px;
+    }
+    .stat-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    .stat-badge i {
+        margin-right: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-1"><i class="bi bi-grid-3x3-gap-fill text-primary"></i> 培训矩阵管理</h4>
+            <p class="text-muted mb-0 small">按部门配置培训矩阵，管理人员可查看本部门培训要求完成情况</p>
+        </div>
+        <a href="{% url 'training_matrix:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> 新建矩阵
+        </a>
+    </div>
+
+    {% if matrices %}
+    <div class="row g-3">
+        {% for matrix in matrices %}
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card matrix-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0"><i class="bi bi-building"></i> {{ matrix.department.name }}</h6>
+                        <small class="opacity-75">{{ matrix.title }}</small>
+                    </div>
+                    {% if matrix.is_active %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">已启用</span>
+                    {% else %}
+                    <span class="badge bg-secondary">已停用</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-around text-center mb-3">
+                        <div>
+                            <div class="fw-bold fs-5 text-primary">{{ matrix.total_items }}</div>
+                            <small class="text-muted">必修课程</small>
+                        </div>
+                        <div class="vr"></div>
+                        <div>
+                            <div class="fw-bold fs-5 text-success">{{ matrix.completed_users }}</div>
+                            <small class="text-muted">已完成人数</small>
+                        </div>
+                        <div class="vr"></div>
+                        <div>
+                            <div class="fw-bold fs-5 text-info">{{ matrix.total_users }}</div>
+                            <small class="text-muted">总人数</small>
+                        </div>
+                    </div>
+
+                    {% if matrix.description %}
+                    <p class="small text-muted mb-2">{{ matrix.description|truncatechars:60 }}</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent border-top-0 pt-0">
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{% url 'training_matrix:detail' matrix.pk %}" class="btn btn-outline-primary btn-sm flex-grow-1">
+                            <i class="bi bi-eye"></i> 详情
+                        </a>
+                        <a href="{% url 'training_matrix:edit' matrix.pk %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'training_matrix:assign' matrix.pk %}" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-person-plus"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <div class="mb-3" style="font-size: 4rem; opacity: 0.15;">
+            <i class="bi bi-grid-3x3-gap-fill"></i>
+        </div>
+        <h5 class="text-muted">暂无培训矩阵</h5>
+        <p class="text-muted">按部门配置培训矩阵，指定各岗位必修课程</p>
+        <a href="{% url 'training_matrix:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> 创建第一个矩阵
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

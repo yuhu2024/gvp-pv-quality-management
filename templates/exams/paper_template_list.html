@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}出卷模板 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-file-earmark-text"></i> 出卷模板</h4>
+                <div>
+                    <a href="{% url 'exams:paper_template_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> 创建模板
+                    </a>
+                    <a href="{% url 'exams:list' %}" class="btn btn-secondary">返回考试</a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if templates %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>模板名称</th>
+                                <th>规则</th>
+                                <th>总题数</th>
+                                <th>总分</th>
+                                <th>时长</th>
+                                <th>及格分</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in templates %}
+                            <tr>
+                                <td>
+                                    <strong>{{ t.name }}</strong>
+                                    {% if t.description %}<br><small class="text-muted">{{ t.description|truncatewords:8 }}</small>{% endif %}
+                                </td>
+                                <td>
+                                    {% for r in t.rules.all %}
+                                    <span class="badge bg-secondary me-1">{{ r.get_question_type_display }} x{{ r.count }}</span>
+                                    {% endfor %}
+                                </td>
+                                <td>{{ t.get_rules|length }}</td>
+                                <td>{% widthratio t.get_rules|length 1 1 %}</td>
+                                <td>{{ t.duration }}分钟</td>
+                                <td>{{ t.pass_score }}分</td>
+                                <td>{{ t.created_at|date:"Y-m-d" }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{% url 'exams:paper_generate' t.pk %}" class="btn btn-sm btn-success">
+                                            <i class="bi bi-magic"></i> 生成考试
+                                        </a>
+                                        <a href="{% url 'exams:paper_template_edit' t.pk %}" class="btn btn-sm btn-outline-primary">编辑</a>
+                                        <form method="post" action="{% url 'exams:paper_template_delete' t.pk %}" style="display:inline" onsubmit="return confirm('确认删除此模板？')">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">删除</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                    <p class="mt-3">暂未创建出卷模板</p>
+                    <a href="{% url 'exams:paper_template_create' %}" class="btn btn-primary">创建第一个模板</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

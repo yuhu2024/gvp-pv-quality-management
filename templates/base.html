@@ -1,0 +1,247 @@
+{% load static %}
+{% load widget_tweaks %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{ SYSTEM_NAME }} - 药物警戒在线培训、考试测评与培训计划管理平台">
+    <title>{% block title %}{{ SYSTEM_NAME }}{% endblock %}</title>
+
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- 自定义样式 -->
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container">
+            <!-- 品牌Logo -->
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'users:dashboard' %}">
+                <i class="bi bi-mortarboard-fill me-1"></i>
+                <span class="brand-text">{{ SYSTEM_NAME }}</span>
+            </a>
+
+            <!-- 移动端折叠按钮 -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="切换导航">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- 导航内容 -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- 左侧导航菜单 -->
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <!-- 管理员菜单 -->
+                    {% if user.is_authenticated and user.is_staff %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-gear-fill"></i> 管理中心
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'courses:admin_dashboard' %}"><i class="bi bi-house-gear"></i> 管理首页</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">基础配置</h6></li>
+                            <li><a class="dropdown-item" href="{% url 'courses:admin_category_list' %}"><i class="bi bi-tags"></i> 课程分类管理</a></li>
+                            <li><a class="dropdown-item" href="/admin/users/department/"><i class="bi bi-diagram-3"></i> 部门管理</a></li>
+                            <li><a class="dropdown-item" href="{% url 'config:settings' %}"><i class="bi bi-sliders"></i> 系统参数</a></li>
+                            <li><a class="dropdown-item" href="{% url 'llm:providers' %}"><i class="bi bi-robot"></i> 大模型配置</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">培训管理</h6></li>
+                            <li><a class="dropdown-item" href="{% url 'plans:mandatory_overview' %}"><i class="bi bi-clipboard-check"></i> 强制培训总览</a></li>
+                            <li><a class="dropdown-item" href="{% url 'plans:list' %}"><i class="bi bi-clipboard2-check"></i> 培训计划</a></li>
+                            <li><a class="dropdown-item" href="{% url 'training_matrix:list' %}"><i class="bi bi-grid-3x3-gap-fill"></i> 培训矩阵</a></li>
+                            <li><a class="dropdown-item" href="{% url 'courses:review_list' %}"><i class="bi bi-check2-square"></i> 审核管理</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">数据管理</h6></li>
+                            <li><a class="dropdown-item" href="{% url 'logs:admin_dashboard' %}"><i class="bi bi-bar-chart-line"></i> 数据面板</a></li>
+                            <li><a class="dropdown-item" href="{% url 'logs:export_exam_scores' %}"><i class="bi bi-file-earmark-excel"></i> 导出成绩</a></li>
+                            <li><a class="dropdown-item" href="{% url 'logs:export_training_report' %}"><i class="bi bi-file-earmark-bar-graph"></i> 导出培训报告</a></li>
+                            <li><a class="dropdown-item" href="{% url 'users:user_list' %}"><i class="bi bi-people"></i> 用户管理</a></li>
+                            <li><a class="dropdown-item" href="{% url 'logs:operation_log' %}"><i class="bi bi-journal-text"></i> 操作日志</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/admin/" target="_blank"><i class="bi bi-terminal"></i> Django后台</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'exams' or request.resolver_match.namespace == 'question_bank' %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-pencil-square"></i> 考试中心
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'exams:list' %}"><i class="bi bi-list-ul"></i> 考试列表</a></li>
+                            <li><a class="dropdown-item" href="{% url 'exams:create' %}"><i class="bi bi-plus-circle"></i> 创建考试</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'question_bank:list' %}"><i class="bi bi-database"></i> 题库管理</a></li>
+                            <li><a class="dropdown-item" href="{% url 'exams:paper_template_list' %}"><i class="bi bi-file-earmark-text"></i> 出卷模板</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'llm:ai_questions' %}"><i class="bi bi-magic"></i> AI 自动出题</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.namespace == 'courses' %}active{% endif %}" href="{% url 'courses:list' %}">
+                            <i class="bi bi-book"></i> 课程管理
+                        </a>
+                    </li>
+                    {% else %}
+                    <!-- 学员菜单 -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'users:dashboard' %}">
+                            <i class="bi bi-house-door"></i> 首页
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.namespace == 'courses' %}active{% endif %}" href="{% url 'courses:list' %}">
+                            <i class="bi bi-book"></i> 课程中心
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.namespace == 'exams' %}active{% endif %}" href="{% url 'exams:list' %}">
+                            <i class="bi bi-pencil-square"></i> 在线考试
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.namespace == 'plans' %}active{% endif %}" href="{% url 'plans:my_tasks' %}">
+                            <i class="bi bi-list-task"></i> 我的培训
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.namespace == 'training_matrix' %}active{% endif %}" href="{% url 'training_matrix:my_matrix' %}">
+                            <i class="bi bi-grid-3x3-gap-fill"></i> 培训矩阵
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.namespace == 'logs' and request.resolver_match.url_name == 'learning_log' %}active{% endif %}" href="{% url 'logs:learning_log' %}">
+                            <i class="bi bi-clock-history"></i> 学习记录
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <!-- 通用菜单（管理员和学员都可见） -->
+                    {% if user.is_authenticated and not user.is_staff %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.namespace == 'certificates' %}active{% endif %}" href="{% url 'certificates:list' %}">
+                            <i class="bi bi-award"></i> 我的证书
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <!-- 右侧用户信息 -->
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle user-dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle"></i>
+                            <span class="d-none d-md-inline ms-1">{{ user.get_full_name|default:user.username }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li class="px-3 py-2">
+                                <small class="text-muted">当前登录</small>
+                                <div class="fw-semibold">{{ user.username }}</div>
+                                {% if user.is_staff %}
+                                <span class="badge bg-danger mt-1">管理员</span>
+                                {% endif %}
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'users:profile' %}">
+                                    <i class="bi bi-person"></i> 个人资料
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'users:password_reset' %}">
+                                    <i class="bi bi-key"></i> 修改密码
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{% url 'users:logout' %}">
+                                    <i class="bi bi-box-arrow-right"></i> 退出登录
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'users:login' %}">
+                            <i class="bi bi-box-arrow-in-right"></i> 登录
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 消息提示 (Django Messages Framework) -->
+    {% if messages %}
+    <div class="container mt-3 message-container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show d-flex align-items-center" role="alert">
+            {% if message.tags == 'success' %}
+                <i class="bi bi-check-circle-fill me-2"></i>
+            {% elif message.tags == 'error' %}
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {% elif message.tags == 'warning' %}
+                <i class="bi bi-exclamation-circle-fill me-2"></i>
+            {% elif message.tags == 'info' %}
+                <i class="bi bi-info-circle-fill me-2"></i>
+            {% endif %}
+            <div class="flex-grow-1">{{ message }}</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="关闭"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- 主内容区域 -->
+    <main class="container my-4">
+        <!-- 面包屑导航 -->
+        {% block breadcrumb %}{% endblock %}
+
+        <!-- 页面标题 -->
+        {% block page_header %}{% endblock %}
+
+        <!-- 主内容 -->
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="site-footer mt-auto">
+        <div class="container">
+            <div class="row align-items-center py-4">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="mb-1">
+                        <i class="bi bi-mortarboard-fill"></i>
+                        <strong>{{ SYSTEM_NAME }}</strong>
+                    </p>
+                    <p class="mb-0 text-muted small">&copy; {% now "Y" %} {{ SYSTEM_NAME }}. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end mt-2 mt-md-0">
+                    <a href="{% url 'users:dashboard' %}" class="text-muted text-decoration-none me-3">首页</a>
+                    <a href="{% url 'courses:list' %}" class="text-muted text-decoration-none me-3">课程中心</a>
+                    <a href="{% url 'exams:list' %}" class="text-muted text-decoration-none me-3">考试中心</a>
+                    <a href="{% url 'logs:learning_log' %}" class="text-muted text-decoration-none">学习记录</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 回到顶部按钮 -->
+    <button class="scroll-top btn btn-primary rounded-circle shadow" title="回到顶部" aria-label="回到顶部">
+        <i class="bi bi-chevron-up"></i>
+    </button>
+
+    <!-- Bootstrap 5 JS Bundle CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- 自定义JS -->
+    <script src="{% static 'js/main.js' %}"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

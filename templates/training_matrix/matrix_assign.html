@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}分配矩阵 - {{ matrix.title }} - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'training_matrix:list' %}">培训矩阵</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'training_matrix:detail' matrix.pk %}">{{ matrix.title }}</a></li>
+            <li class="breadcrumb-item active">分配矩阵</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="bi bi-person-plus text-primary"></i> 分配矩阵到部门人员</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <p><strong>矩阵：</strong>{{ matrix.title }}</p>
+                        <p><strong>部门：</strong>{{ matrix.department.name }}</p>
+                        <p><strong>课程数量：</strong>{{ matrix.items.count }} 门</p>
+                        <p><strong>部门人员：</strong>{{ users|length }} 人</p>
+                    </div>
+
+                    {% if users %}
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>姓名</th>
+                                    <th>工号</th>
+                                    <th>岗位</th>
+                                    <th>角色</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for u in users %}
+                                <tr>
+                                    <td>{{ u.get_full_name|default:u.username }}</td>
+                                    <td>{{ u.employee_id|default:'-' }}</td>
+                                    <td>{{ u.position|default:'-' }}</td>
+                                    <td>{{ u.role.name|default:'-' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <p class="text-muted small">
+                            <i class="bi bi-info-circle"></i>
+                            分配后将为每位用户创建该矩阵所有必修课程的进度记录。
+                            已有记录不会重复创建。
+                        </p>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg"></i> 确认分配
+                        </button>
+                        <a href="{% url 'training_matrix:detail' matrix.pk %}" class="btn btn-outline-secondary">取消</a>
+                    </form>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-people" style="font-size: 3rem; opacity: 0.2;"></i>
+                        <p class="text-muted mt-2">该部门暂无活跃用户</p>
+                        <a href="{% url 'training_matrix:detail' matrix.pk %}" class="btn btn-outline-secondary">返回</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

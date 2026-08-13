@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}强制培训人员管理 - {{ plan.title }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'courses:admin_dashboard' %}">管理中心</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'plans:mandatory_overview' %}">强制培训总览</a></li>
+                <li class="breadcrumb-item active">{{ plan.title }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- 计划信息 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h4>{{ plan.title }}</h4>
+                <p class="text-muted mb-2">{{ plan.description }}</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge {% if plan.status == 'in_progress' %}bg-success{% elif plan.status == 'completed' %}bg-secondary{% elif plan.status == 'expired' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                        {{ plan.get_status_display }}
+                    </span>
+                    {% if plan.is_mandatory %}
+                    <span class="badge bg-danger"><i class="bi bi-exclamation-circle"></i> 强制培训</span>
+                    {% endif %}
+                    {% if plan.require_exam_pass %}
+                    <span class="badge bg-info"><i class="bi bi-check2-all"></i> 必须通过考试</span>
+                    {% endif %}
+                </div>
+            </div>
+            <a href="{% url 'plans:detail' plan.pk %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> 返回计划详情
+            </a>
+        </div>
+
+        <hr>
+
+        <div class="row text-center">
+            <div class="col-md-3">
+                <div class="border-end">
+                    <small class="text-muted d-block">培训时限</small>
+                    <strong class="{% if plan.is_expired %}text-danger{% endif %}">
+                        {% if plan.deadline %}{{ plan.deadline }}{% else %}未设置{% endif %}
+                    </strong>
+                    {% if plan.is_expired %}
+                    <span class="badge bg-danger ms-1">已逾期</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border-end">
+                    <small class="text-muted d-block">允许重考</small>
+                    <strong>
+                        {% if plan.allow_retake %}
+                        <span class="text-success">是</span>
+                        {% else %}
+                        <span class="text-danger">否</span>
+                        {% endif %}
+                    </strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border-end">
+                    <small class="text-muted d-block">最大考试次数</small>
+                    <strong>
+                        {% if plan.max_attempts == 0 %}不限{% else %}{{ plan.max_attempts }} 次{% endif %}
+                    </strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div>
+                    <small class="text-muted d-block">总人数</small>
+                    <strong>{{ trainees|length }} 人</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加人员 -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-person-plus"></i> 添加强制培训人员</h5>
+    </div>
+    <div class="card-body">
+        <!-- 按部门批量添加 -->
+        <form method="post" class="mb-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_department">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-6">
+                    <label class="form-label small text-muted">按部门批量添加</label>
+                    <select name="department" class="form-select form-select-sm">
+                        <option value="">-- 选择部门 --</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.pk }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="bi bi-diagram-3"></i> 添加整个部门
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <hr>
+
+        <!-- 按用户选择添加 -->
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-8">
+                    <label class="form-label small text-muted">选择人员</label>
+                    <select name="users" class="form-select form-select-sm" multiple size="5">
+                        {% for u in users %}
+                        <option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }} ({{ u.department|default:"未分配部门" }})</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">按住 Ctrl/Cmd 可多选</small>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-sm btn-primary w-100">
+                        <i class="bi bi-plus-circle"></i> 添加选中
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 人员名单 -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="bi bi-people"></i> 强制培训人员名单（{{ trainees|length }}人）
+        </h5>
+        {% if trainees %}
+        <button class="btn btn-sm btn-outline-success" onclick="exportTraineeList()">
+            <i class="bi bi-download"></i> 导出名单
+        </button>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        {% if trainees %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="traineeTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>姓名</th>
+                        <th>部门</th>
+                        <th class="text-center">状态</th>
+                        <th class="text-center">考试次数</th>
+                        <th class="text-center">最近得分</th>
+                        <th>分配时间</th>
+                        <th>完成时间</th>
+                        <th class="text-center">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trainee in trainees %}
+                    <tr>
+                        <td>
+                            <strong>{{ trainee.user.get_full_name|default:trainee.user.username }}</strong>
+                            <br>
+                            <small class="text-muted">{{ trainee.user.username }}</small>
+                        </td>
+                        <td>{{ trainee.user.department|default:"-" }}</td>
+                        <td class="text-center">
+                            {% if trainee.status == 'passed' %}
+                            <span class="badge bg-success">已通过</span>
+                            {% elif trainee.status == 'failed' %}
+                            <span class="badge bg-warning text-dark">需重考</span>
+                            {% elif trainee.status == 'overdue' %}
+                            <span class="badge bg-danger">已逾期</span>
+                            {% elif trainee.status == 'learning' %}
+                            <span class="badge bg-info">学习中</span>
+                            {% elif trainee.status == 'exam_pending' %}
+                            <span class="badge bg-primary">待考试</span>
+                            {% else %}
+                            <span class="badge bg-secondary">未开始</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">{{ trainee.exam_attempts }}</td>
+                        <td class="text-center">
+                            {% if trainee.last_exam_score %}
+                            <span class="{% if trainee.last_exam_score >= 60 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                {{ trainee.last_exam_score }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td><small>{{ trainee.assigned_at|date:"Y-m-d H:i" }}</small></td>
+                        <td>
+                            {% if trainee.completed_at %}
+                            <small>{{ trainee.completed_at|date:"Y-m-d H:i" }}</small>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <form method="post" class="d-inline" 
+                                  onsubmit="return confirm('确定移除 {{ trainee.user.get_full_name|default:trainee.user.username }} 吗？');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="remove">
+                                <input type="hidden" name="trainee_id" value="{{ trainee.pk }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="移除">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-people" style="font-size: 3rem; color: #ccc;"></i>
+            <p class="text-muted mt-3">暂无强制培训人员</p>
+            <p class="text-muted small">请在上方添加人员</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function exportTraineeList() {
+    // 简单导出为CSV
+    var table = document.getElementById('traineeTable');
+    var rows = [];
+    for (var i = 0, row; row = table.rows[i]; i++) {
+        var cells = [];
+        for (var j = 0, col; col = row.cells[j]; j++) {
+            var text = col.innerText.replace(/\n/g, ' ').trim();
+            cells.push('"' + text + '"');
+        }
+        rows.push(cells.join(','));
+    }
+    var csv = '\ufeff' + rows.join('\n');
+    var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = '强制培训人员名单_{{ plan.title }}.csv';
+    link.click();
+}
+</script>
+{% endblock %}

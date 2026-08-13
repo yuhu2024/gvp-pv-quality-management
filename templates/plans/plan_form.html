@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}{{ page_title }} - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'plans:list' %}">培训计划</a></li>
+                <li class="breadcrumb-item active">{{ page_title }}</li>
+            </ol>
+        </nav>
+        <h4>{{ page_title }}</h4>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- 基本信息 -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> 基本信息</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">{{ form.title.label }} <span class="text-danger">*</span></label>
+                            {{ form.title|attr:"class:form-control" }}
+                            {% if form.title.errors %}<div class="text-danger small">{{ form.title.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">{{ form.description.label }}</label>
+                            {{ form.description|attr:"class:form-control"|attr:"rows:2" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.start_date.label }} <span class="text-danger">*</span></label>
+                            {{ form.start_date|attr:"class:form-control"|attr:"type:date" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.end_date.label }} <span class="text-danger">*</span></label>
+                            {{ form.end_date|attr:"class:form-control"|attr:"type:date" }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.status.label }}</label>
+                            {{ form.status|attr:"class:form-select" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 强制培训配置 -->
+            <div class="card shadow-sm mb-3 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0"><i class="bi bi-exclamation-circle"></i> 强制培训配置</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.deadline.label }}</label>
+                            {{ form.deadline|attr:"class:form-control"|attr:"type:date" }}
+                            <small class="text-muted">所有参训人员必须在此日期前完成培训和考试</small>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-4">
+                                {{ form.is_mandatory|attr:"class:form-check-input" }}
+                                <label class="form-check-label" for="{{ form.is_mandatory.id_for_label }}">
+                                    <strong>{{ form.is_mandatory.label }}</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted">开启后，可设置强制培训人员名单</small>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch mt-2">
+                                {{ form.require_exam_pass|attr:"class:form-check-input" }}
+                                <label class="form-check-label" for="{{ form.require_exam_pass.id_for_label }}">
+                                    {{ form.require_exam_pass.label }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch mt-2">
+                                {{ form.allow_retake|attr:"class:form-check-input" }}
+                                <label class="form-check-label" for="{{ form.allow_retake.id_for_label }}">
+                                    {{ form.allow_retake.label }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.max_attempts.label }}</label>
+                            {{ form.max_attempts|attr:"class:form-control"|attr:"type:number"|attr:"min:0" }}
+                            <small class="text-muted">0=不限次数</small>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning mt-3 mb-0 small">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>提示：</strong>
+                        开启强制培训后，创建计划成功后可在计划详情中添加强制参训人员名单。
+                        参训人员需在截止日期前完成培训并通过考试，未通过者需继续学习并重考，直到通过为止。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 关联课程和考试 -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-link-45deg"></i> 关联内容（二级配置）</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.courses.label }}</label>
+                            {{ form.courses|attr:"class:form-select"|attr:"size:6" }}
+                            <small class="text-muted">按住 Ctrl/Cmd 可多选课程</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.exams.label }}</label>
+                            {{ form.exams|attr:"class:form-select"|attr:"size:6" }}
+                            <small class="text-muted">按住 Ctrl/Cmd 可多选考试</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="d-flex gap-2 justify-content-end">
+                <a href="{% url 'plans:list' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-lg"></i> 取消
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i> 保存计划
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

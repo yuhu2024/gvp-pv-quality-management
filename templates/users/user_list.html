@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}用户列表 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4><i class="bi bi-people"></i> 用户管理</h4>
+            <div>
+                <a href="{% url 'users:user_create' %}" class="btn btn-primary">
+                    <i class="bi bi-person-plus"></i> 创建用户
+                </a>
+                <a href="{% url 'users:batch_import' %}" class="btn btn-success">
+                    <i class="bi bi-file-earmark-excel"></i> 批量导入
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 筛选栏 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label for="keyword" class="form-label">关键词搜索</label>
+                <input type="text" name="keyword" id="keyword" class="form-control"
+                       placeholder="用户名/工号/姓名" value="{{ current_keyword }}">
+            </div>
+            <div class="col-md-2">
+                <label for="department" class="form-label">部门</label>
+                <select name="department" id="department" class="form-select">
+                    <option value="">全部部门</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}" {% if current_department == dept.id|stringformat:"s" %}selected{% endif %}>
+                        {{ dept.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="role" class="form-label">角色</label>
+                <select name="role" id="role" class="form-select">
+                    <option value="">全部角色</option>
+                    {% for r in roles %}
+                    <option value="{{ r.id }}" {% if current_role == r.id|stringformat:"s" %}selected{% endif %}>
+                        {{ r.get_name_display }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="is_active" class="form-label">状态</label>
+                <select name="is_active" id="is_active" class="form-select">
+                    <option value="">全部</option>
+                    <option value="true" {% if current_is_active == 'true' %}selected{% endif %}>已激活</option>
+                    <option value="false" {% if current_is_active == 'false' %}selected{% endif %}>未激活</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-search"></i> 搜索
+                </button>
+                <a href="{% url 'users:user_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-counterclockwise"></i> 重置
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 用户列表 -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>工号</th>
+                        <th>用户名</th>
+                        <th>姓名</th>
+                        <th>部门</th>
+                        <th>角色</th>
+                        <th>手机号</th>
+                        <th>状态</th>
+                        <th>注册时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td>{{ u.employee_id|default:"--" }}</td>
+                        <td>{{ u.username }}</td>
+                        <td>{{ u.last_name }}{{ u.first_name }}</td>
+                        <td>{{ u.department.name|default:"--" }}</td>
+                        <td>
+                            {% if u.role %}
+                                {{ u.role.get_name_display }}
+                            {% else %}
+                                --
+                            {% endif %}
+                        </td>
+                        <td>{{ u.phone|default:"--" }}</td>
+                        <td>
+                            {% if u.is_active %}
+                                <span class="badge bg-success">已激活</span>
+                            {% else %}
+                                <span class="badge bg-secondary">未激活</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ u.date_joined|date:"Y-m-d" }}</td>
+                        <td>
+                            <a href="{% url 'users:user_delete' u.pk %}" class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('确定要删除用户 {{ u.username }} 吗？')">
+                                <i class="bi bi-trash"></i> 删除
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted">暂无用户数据</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

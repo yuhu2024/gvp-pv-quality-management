@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}{{ exam.title }} - 考试详情 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-pencil-square"></i> {{ exam.title }} - 考试详情</h4>
+                <div>
+                    <a href="{% url 'exams:scores' exam.pk %}" class="btn btn-sm btn-info">查看成绩</a>
+                    <a href="{% url 'exams:list' %}" class="btn btn-sm btn-secondary">返回列表</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><strong>考试说明：</strong>{{ exam.description|default:"无" }}</li>
+                    <li><strong>关联课程：</strong>{{ exam.course|default:"无" }}</li>
+                    <li><strong>考试时长：</strong>{{ exam.duration }}分钟</li>
+                    <li><strong>总分：</strong>{{ exam.total_score }}分</li>
+                    <li><strong>及格分：</strong>{{ exam.pass_score }}分</li>
+                    <li><strong>是否发布：</strong>{{ exam.is_published|yesno:"是,否" }}</li>
+                    <li><strong>创建者：</strong>{{ exam.created_by|default:"未知" }}</li>
+                    <li><strong>创建时间：</strong>{{ exam.created_at|date:"Y-m-d H:i" }}</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 题目列表 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-list-ol"></i> 题目列表（共 {{ questions|length }} 题）</h5>
+            </div>
+            <div class="card-body">
+                {% for question in questions %}
+                <div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                    <h6>
+                        <span class="badge bg-primary">{{ forloop.counter }}</span>
+                        {{ question.question_text }}
+                        <small class="text-muted">
+                            （{{ question.get_question_type_display }}，{{ question.score }}分）
+                        </small>
+                    </h6>
+                    {% if question.question_type in 'single_choice,multi_choice' %}
+                    <div class="ms-3">
+                        {% if question.option_a %}<div>A. {{ question.option_a }}</div>{% endif %}
+                        {% if question.option_b %}<div>B. {{ question.option_b }}</div>{% endif %}
+                        {% if question.option_c %}<div>C. {{ question.option_c }}</div>{% endif %}
+                        {% if question.option_d %}<div>D. {{ question.option_d }}</div>{% endif %}
+                    </div>
+                    {% endif %}
+                    <p class="text-success small mt-1">正确答案：{{ question.correct_answer }}</p>
+                </div>
+                {% empty %}
+                <p class="text-muted">暂无题目。</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 最近考试记录 -->
+        {% if attempts %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-people"></i> 最近考试记录</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>考生</th>
+                                <th>状态</th>
+                                <th>得分</th>
+                                <th>是否及格</th>
+                                <th>开始时间</th>
+                                <th>结束时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for att in attempts %}
+                            <tr>
+                                <td>{{ att.user }}</td>
+                                <td><span class="badge bg-{{ att.status|yesno:"success,warning,info" }}">{{ att.get_status_display }}</span></td>
+                                <td>{{ att.score|default:"-" }}</td>
+                                <td>
+                                    {% if att.is_passed == True %}
+                                    <span class="text-success">通过</span>
+                                    {% elif att.is_passed == False %}
+                                    <span class="text-danger">未通过</span>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>{{ att.start_time|date:"Y-m-d H:i" }}</td>
+                                <td>{{ att.end_time|date:"Y-m-d H:i"|default:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

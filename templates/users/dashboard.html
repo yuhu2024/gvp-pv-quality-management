@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}控制台 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<!-- 欢迎信息 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="page-header border-0 mb-0 p-0">
+            <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-start">
+                <div>
+                    <h4 class="mb-1">
+                        <span class="text-primary">欢迎回来，</span>{{ user.get_full_name|default:user.username }}
+                    </h4>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-calendar3 me-1"></i>今天是 {% now "Y年m月d日" %}，{% now "l" %}
+                    </p>
+                </div>
+                <div class="mt-2 mt-md-0">
+                    <a href="{% url 'courses:list' %}" class="btn btn-primary btn-sm me-1">
+                        <i class="bi bi-book me-1"></i>浏览课程
+                    </a>
+                    <a href="{% url 'plans:my_tasks' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-list-task me-1"></i>我的任务
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 统计卡片 -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg">
+        <div class="stat-card bg-primary text-white">
+            <div class="card-body">
+                <div class="stat-icon">
+                    <i class="bi bi-book"></i>
+                </div>
+                <div class="stat-title">待完成课程</div>
+                <div class="stat-value">{{ pending_course_count }}</div>
+                <div class="stat-subtitle">门课程等待学习</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg">
+        <div class="stat-card bg-success text-white">
+            <div class="card-body">
+                <div class="stat-icon">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div class="stat-title">已完成课程</div>
+                <div class="stat-value">{{ completed_course_count }}</div>
+                <div class="stat-subtitle">门课程已结业</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg">
+        <div class="stat-card bg-warning text-dark">
+            <div class="card-body">
+                <div class="stat-icon">
+                    <i class="bi bi-pencil-square"></i>
+                </div>
+                <div class="stat-title">待考试</div>
+                <div class="stat-value">{{ pending_exam_count }}</div>
+                <div class="stat-subtitle">场考试待参加</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg">
+        <div class="stat-card bg-info text-dark">
+            <div class="card-body">
+                <div class="stat-icon">
+                    <i class="bi bi-award"></i>
+                </div>
+                <div class="stat-title">已完成考试</div>
+                <div class="stat-value">{{ completed_exam_count }}</div>
+                <div class="stat-subtitle">场考试已完成</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg">
+        <div class="stat-card bg-secondary text-white">
+            <div class="card-body">
+                <div class="stat-icon">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+                <div class="stat-title">累计学习时长</div>
+                <div class="stat-value">{{ total_learning_hours }}</div>
+                <div class="stat-subtitle">小时</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 快捷操作入口 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted mb-3"><i class="bi bi-lightning me-1"></i>快捷操作</h6>
+                <div class="row g-3">
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                        <a href="{% url 'courses:list' %}" class="quick-action">
+                            <div class="quick-action-icon text-primary">
+                                <i class="bi bi-book"></i>
+                            </div>
+                            <span class="quick-action-label">课程中心</span>
+                        </a>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                        <a href="{% url 'exams:list' %}" class="quick-action">
+                            <div class="quick-action-icon text-success">
+                                <i class="bi bi-pencil-square"></i>
+                            </div>
+                            <span class="quick-action-label">在线考试</span>
+                        </a>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                        <a href="{% url 'plans:my_tasks' %}" class="quick-action">
+                            <div class="quick-action-icon text-warning">
+                                <i class="bi bi-list-task"></i>
+                            </div>
+                            <span class="quick-action-label">我的任务</span>
+                        </a>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                        <a href="{% url 'plans:list' %}" class="quick-action">
+                            <div class="quick-action-icon text-info">
+                                <i class="bi bi-clipboard2-check"></i>
+                            </div>
+                            <span class="quick-action-label">培训计划</span>
+                        </a>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                        <a href="{% url 'logs:learning_log' %}" class="quick-action">
+                            <div class="quick-action-icon text-secondary">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <span class="quick-action-label">学习记录</span>
+                        </a>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                        <a href="{% url 'users:profile' %}" class="quick-action">
+                            <div class="quick-action-icon text-danger">
+                                <i class="bi bi-person"></i>
+                            </div>
+                            <span class="quick-action-label">个人资料</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 最近学习记录 & 待完成任务 -->
+<div class="row g-3">
+    <!-- 最近学习记录 -->
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history me-1 text-primary"></i>最近学习记录
+                </h5>
+                {% if recent_logs %}
+                <a href="{% url 'logs:learning_log' %}" class="btn btn-sm btn-outline-primary">
+                    查看全部 <i class="bi bi-arrow-right"></i>
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if recent_logs %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>操作类型</th>
+                                <th>课程/考试</th>
+                                <th>学习时长</th>
+                                <th>时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in recent_logs %}
+                            <tr>
+                                <td>
+                                    {% if log.action == 'view' %}
+                                        <span class="badge bg-info text-dark">
+                                            <i class="bi bi-eye me-1"></i>{{ log.get_action_display }}
+                                        </span>
+                                    {% elif log.action == 'study' %}
+                                        <span class="badge bg-primary">
+                                            <i class="bi bi-book me-1"></i>{{ log.get_action_display }}
+                                        </span>
+                                    {% elif log.action == 'exam' %}
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-pencil me-1"></i>{{ log.get_action_display }}
+                                        </span>
+                                    {% elif log.action == 'complete' %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check me-1"></i>{{ log.get_action_display }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ log.get_action_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.course %}
+                                        <a href="{% url 'courses:detail' log.course.pk %}" class="text-decoration-none fw-medium">
+                                            {{ log.course.title }}
+                                        </a>
+                                    {% elif log.exam %}
+                                        <a href="{% url 'exams:detail' log.exam.pk %}" class="text-decoration-none fw-medium">
+                                            {{ log.exam.title }}
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">--</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.duration %}
+                                        {% if log.duration >= 3600 %}
+                                            {{ log.duration|floatformat:0 }}秒
+                                            <small class="text-muted">({{ log.duration|floatformat:0 }}秒)</small>
+                                        {% else %}
+                                            {{ log.duration|floatformat:0 }}秒
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">--</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ log.created_at|date:"Y-m-d H:i" }}</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="bi bi-journal-bookmark"></i>
+                    </div>
+                    <h5>暂无学习记录</h5>
+                    <p>开始您的第一门课程，学习记录将在这里展示。</p>
+                    <a href="{% url 'courses:list' %}" class="btn btn-primary btn-sm mt-2">
+                        <i class="bi bi-book me-1"></i>浏览课程
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 待完成任务 -->
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-check me-1 text-warning"></i>待完成任务
+                </h5>
+                {% if pending_tasks %}
+                <a href="{% url 'plans:my_tasks' %}" class="btn btn-sm btn-outline-primary">
+                    查看全部 <i class="bi bi-arrow-right"></i>
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% if pending_tasks %}
+                <div class="list-group list-group-flush">
+                    {% for assignment in pending_tasks %}
+                    <div class="task-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1 me-2">
+                                <div class="task-title">
+                                    <a href="{% url 'plans:detail' assignment.task.plan.pk %}" class="text-decoration-none">
+                                        {{ assignment.task.title }}
+                                    </a>
+                                </div>
+                                <div class="task-meta">
+                                    <i class="bi bi-collection me-1"></i>{{ assignment.task.plan.title }}
+                                </div>
+                                {% if assignment.task.deadline %}
+                                <div class="task-deadline {% if assignment.task.deadline < today %}overdue{% endif %}">
+                                    <i class="bi bi-calendar-event me-1"></i>
+                                    截止：{{ assignment.task.deadline|date:"Y-m-d" }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <span class="badge bg-{% if assignment.status == 'pending' %}warning text-dark{% elif assignment.status == 'in_progress' %}info text-dark{% elif assignment.status == 'completed' %}success{% else %}secondary{% endif %} flex-shrink-0">
+                                {{ assignment.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="bi bi-emoji-smile"></i>
+                    </div>
+                    <h5>暂无待完成任务</h5>
+                    <p>所有任务已完成，继续加油！</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

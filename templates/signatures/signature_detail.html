@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}签名详情 - 电子签名{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pen"></i> 电子签名详情</h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <img src="{{ signature.signature_image.url }}" alt="签名图片" class="img-fluid border rounded" style="max-height: 200px;">
+                </div>
+                <ul class="list-group list-group-flush text-start">
+                    <li class="list-group-item"><strong>签名者：</strong>{{ signature.signed_by }}</li>
+                    <li class="list-group-item"><strong>签名类型：</strong>{{ signature.get_signature_type_display }}</li>
+                    <li class="list-group-item"><strong>签名时间：</strong>{{ signature.signed_at|date:"Y-m-d H:i:s" }}</li>
+                    <li class="list-group-item"><strong>IP 地址：</strong>{{ signature.ip_address|default:"--" }}</li>
+                    <li class="list-group-item"><strong>设备信息：</strong><small class="text-muted">{{ signature.user_agent|default:"--"|truncatechars:80 }}</small></li>
+                </ul>
+            </div>
+            <div class="card-footer text-center">
+                <a href="javascript:history.back();" class="btn btn-secondary">返回</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

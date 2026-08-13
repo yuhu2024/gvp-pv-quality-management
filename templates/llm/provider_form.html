@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}{% if provider %}编辑{% else %}添加{% endif %}模型配置 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-robot"></i> {% if provider %}编辑{% else %}添加{% endif %}模型配置</h4>
+            </div>
+            <div class="card-body">
+                <!-- 快捷预设 -->
+                {% if not provider %}
+                <div class="mb-4">
+                    <label class="form-label text-muted">快捷选择服务商</label>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="button" class="btn btn-outline-primary preset-btn" onclick="applyPreset('kimi')">
+                            <i class="bi bi-moon-stars"></i> Kimi
+                        </button>
+                        <button type="button" class="btn btn-outline-danger preset-btn" onclick="applyPreset('doubao')">
+                            <i class="bi bi-chat-dots"></i> 豆包
+                        </button>
+                        <button type="button" class="btn btn-outline-success preset-btn" onclick="applyPreset('qwen')">
+                            <i class="bi bi-cpu"></i> 阿里千问
+                        </button>
+                        <button type="button" class="btn btn-outline-dark preset-btn" onclick="applyPreset('openai')">
+                            <i class="bi bi-globe"></i> OpenAI
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary preset-btn" onclick="applyPreset('custom')">
+                            <i class="bi bi-gear"></i> 自定义
+                        </button>
+                    </div>
+                    <small class="text-muted mt-1 d-block" id="presetHelp"></small>
+                </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">配置名称 <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" value="{{ provider.name|default:'' }}" required placeholder="如：Kimi生产环境">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">服务商</label>
+                        <select name="provider" class="form-select" id="providerSelect">
+                            {% for value, label in provider_choices %}
+                            <option value="{{ value }}" {% if provider and provider.provider == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">API Key <span class="text-danger">*</span></label>
+                        <input type="password" name="api_key" class="form-control" value="{{ provider.api_key|default:'' }}" required>
+                        <small class="text-muted" id="apiKeyHelp"></small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">API 地址 <span class="text-danger">*</span></label>
+                        <input type="url" name="base_url" class="form-control" value="{{ provider.base_url|default:'' }}" required id="baseUrlInput">
+                        <small class="text-muted">OpenAI 兼容的接口地址</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">模型名称 <span class="text-danger">*</span></label>
+                        <input type="text" name="model_name" class="form-control" value="{{ provider.model_name|default:'' }}" required id="modelNameInput">
+                        <small class="text-muted" id="modelNameHelp"></small>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">温度参数</label>
+                            <input type="number" name="temperature" class="form-control" value="{{ provider.temperature|default:'0.7' }}" step="0.1" min="0" max="2">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">最大 Token</label>
+                            <input type="number" name="max_tokens" class="form-control" value="{{ provider.max_tokens|default:4096 }}" min="100">
+                        </div>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" name="is_active" class="form-check-input" id="isActive" {% if not provider or provider.is_active %}checked{% endif %}>
+                        <label for="isActive" class="form-check-label">启用</label>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" name="is_default" class="form-check-input" id="isDefault" {% if provider and provider.is_default %}checked{% endif %}>
+                        <label for="isDefault" class="form-check-label">设为默认模型</label>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle"></i> 保存</button>
+                        <a href="{% url 'llm:providers' %}" class="btn btn-secondary">取消</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var presets = {{ presets_json|safe }};
+
+function applyPreset(key) {
+    var preset = presets[key];
+    if (!preset) return;
+
+    document.getElementById('providerSelect').value = key;
+    document.getElementById('baseUrlInput').value = preset.base_url;
+    document.getElementById('modelNameInput').value = preset.model_name;
+    document.getElementById('presetHelp').textContent = preset.help;
+    document.getElementById('apiKeyHelp').textContent = preset.help;
+    document.getElementById('modelNameHelp').textContent = '如：' + preset.model_name;
+}
+
+// 初始化时显示当前选择的帮助
+document.getElementById('providerSelect').addEventListener('change', function() {
+    var preset = presets[this.value];
+    if (preset) {
+        document.getElementById('presetHelp').textContent = preset.help;
+        document.getElementById('apiKeyHelp').textContent = preset.help;
+    }
+});
+</script>
+{% endblock %}

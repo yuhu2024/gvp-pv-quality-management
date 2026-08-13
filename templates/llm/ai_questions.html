@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}AI 自动出题 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.ai-result-card { background: #f8f9fa; border-radius: 8px; padding: 16px; margin-bottom: 12px; border-left: 3px solid #6f42c1; }
+.ai-result-card .q-text { font-weight: 600; margin-bottom: 8px; }
+.ai-result-card .q-answer { color: #28a745; font-weight: 600; }
+.ai-result-card .q-analysis { color: #666; font-size: 0.9rem; margin-top: 4px; }
+.loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-magic"></i> AI 自动出题</h4>
+                <a href="{% url 'question_bank:list' %}" class="btn btn-sm btn-secondary">返回题库</a>
+            </div>
+            <div class="card-body">
+                {% if not generated_questions %}
+                <!-- 输入表单 -->
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 将学习材料粘贴到下方，AI 会自动生成题目。生成后可预览并保存到题库。
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">学习材料内容 <span class="text-danger">*</span></label>
+                        <textarea name="content" class="form-control" rows="10" required
+                                  placeholder="粘贴课程文本内容、知识点总结、培训材料等（最多8000字）...">{{ content|default:'' }}</textarea>
+                        <small class="text-muted">支持任意文本内容，AI 会根据内容自动生成相关题目</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">题目类型</label>
+                            <select name="question_type" class="form-select">
+                                {% for value, label in type_choices %}
+                                <option value="{{ value }}" {% if question_type == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">生成数量</label>
+                            <input type="number" name="count" class="form-control" value="{{ count|default:5 }}" min="1" max="20">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">难度</label>
+                            <select name="difficulty" class="form-select">
+                                {% for value, label in difficulty_choices %}
+                                <option value="{{ value }}" {% if difficulty == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">标签</label>
+                            <input type="text" name="tags" class="form-control" value="{{ tags|default:'' }}" placeholder="逗号分隔">
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" name="action" value="preview" class="btn btn-primary">
+                            <i class="bi bi-magic"></i> AI 生成题目
+                        </button>
+                        <a href="{% url 'question_bank:list' %}" class="btn btn-secondary">取消</a>
+                    </div>
+                </form>
+
+                {% else %}
+                <!-- 生成结果预览 -->
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i> AI 已生成 <strong>{{ generated_questions|length }}</strong> 道题目，请检查后保存到题库。
+                </div>
+
+                {% for q in generated_questions %}
+                <div class="ai-result-card">
+                    <div class="q-text">{{ forloop.counter }}. {{ q.question_text }}</div>
+                    {% if q.option_a %}
+                    <div>A. {{ q.option_a }}</div>
+                    <div>B. {{ q.option_b }}</div>
+                    {% if q.option_c %}<div>C. {{ q.option_c }}</div>{% endif %}
+                    {% if q.option_d %}<div>D. {{ q.option_d }}</div>{% endif %}
+                    {% endif %}
+                    <div class="q-answer">答案：{{ q.correct_answer }}</div>
+                    {% if q.analysis %}
+                    <div class="q-analysis">解析：{{ q.analysis }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <!-- 确认保存 -->
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="save">
+                    <input type="hidden" name="content" value="{{ content }}">
+                    <input type="hidden" name="question_type" value="{{ question_type }}">
+                    <input type="hidden" name="count" value="{{ count }}">
+                    <input type="hidden" name="difficulty" value="{{ difficulty }}">
+                    <input type="hidden" name="tags" value="{{ tags }}">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> 全部保存到题库
+                        </button>
+                        <a href="{% url 'llm:ai_questions' %}" class="btn btn-outline-secondary">重新生成</a>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

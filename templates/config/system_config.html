@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}系统配置 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'users:dashboard' %}">首页</a></li>
+        <li class="breadcrumb-item active">系统配置</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><i class="bi bi-sliders me-2"></i>系统配置</h4>
+</div>
+{% endblock %}
+
+{% block content %}
+<form method="post">
+    {% csrf_token %}
+
+    {% for group_code, group_info in configs_by_group.items %}
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-folder2-open me-2"></i>{{ group_info.label }}</h5>
+        </div>
+        <div class="card-body">
+            {% if group_info.items %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 20%;">配置项</th>
+                            <th style="width: 30%;">当前值</th>
+                            <th style="width: 40%;">说明</th>
+                            <th style="width: 10%;">类型</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for config in group_info.items %}
+                        <tr>
+                            <td class="fw-semibold">{{ config.label }}</td>
+                            <td>
+                                {% if config.value_type == 'boolean' %}
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox"
+                                           name="config_{{ config.key }}"
+                                           {% if config.value|lower in 'true,1,yes' %}checked{% endif %}>
+                                </div>
+                                {% elif config.value_type == 'json' %}
+                                <textarea class="form-control form-control-sm" name="config_{{ config.key }}"
+                                          rows="3">{{ config.value }}</textarea>
+                                {% elif config.value_type == 'integer' or config.value_type == 'float' %}
+                                <input type="number" class="form-control form-control-sm"
+                                       name="config_{{ config.key }}"
+                                       value="{{ config.value }}"
+                                       {% if config.value_type == 'integer' %}step="1"{% else %}step="0.01"{% endif %}>
+                                {% else %}
+                                <input type="text" class="form-control form-control-sm"
+                                       name="config_{{ config.key }}"
+                                       value="{{ config.value }}">
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ config.description|default:"暂无说明" }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">
+                                    {{ config.get_value_type_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-3 mb-0">该分组暂无配置项</p>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>暂无系统配置项
+    </div>
+    {% endfor %}
+
+    <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg me-1"></i>保存配置
+        </button>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if is_create %}新建培训矩阵{% else %}编辑培训矩阵{% endif %} - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .matrix-form-section {
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+        padding: 20px;
+        margin-bottom: 16px;
+    }
+    .matrix-form-section h6 {
+        color: #0d6efd;
+        font-weight: 600;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    .item-row {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 8px;
+        border: 1px solid #e9ecef;
+        transition: all 0.2s;
+    }
+    .item-row:hover {
+        background: #f0f4ff;
+        border-color: #0d6efd;
+    }
+    .item-row .remove-btn {
+        cursor: pointer;
+        color: #dc3545;
+        font-size: 1.2rem;
+    }
+    .item-row .remove-btn:hover {
+        color: #a71d2a;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'training_matrix:list' %}">培训矩阵</a></li>
+            <li class="breadcrumb-item active">{% if is_create %}新建矩阵{% else %}编辑矩阵{% endif %}</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <form method="post" id="matrixForm">
+                {% csrf_token %}
+
+                <div class="matrix-form-section">
+                    <h6><i class="bi bi-info-circle"></i> 基本信息</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">矩阵名称 <span class="text-danger">*</span></label>
+                            <input type="text" name="title" class="form-control" required
+                                   value="{{ matrix.title|default:'' }}"
+                                   placeholder="如：药物警戒部培训矩阵">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">所属部门 <span class="text-danger">*</span></label>
+                            <select name="department" class="form-select" required>
+                                <option value="">请选择部门</option>
+                                {% for dept in departments %}
+                                <option value="{{ dept.pk }}" {% if matrix.department_id == dept.pk %}selected{% endif %}>
+                                    {{ dept.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">描述</label>
+                            <textarea name="description" class="form-control" rows="2"
+                                      placeholder="矩阵说明（可选）">{{ matrix.description|default:'' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="matrix-form-section">
+                    <h6><i class="bi bi-list-check"></i> 矩阵条目（必修课程配置）</h6>
+                    <p class="text-muted small mb-3">
+                        为部门配置必修课程，可指定岗位（留空即全员必修）。
+                        每个岗位/全员为一组课程配置，可添加多组。
+                    </p>
+
+                    <div id="itemsContainer">
+                        {% if matrix %}
+                        {% for item in matrix.items.all %}
+                        <div class="item-row" data-index="{{ forloop.counter0 }}">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="fw-bold small text-primary">
+                                    <i class="bi bi-gear"></i> 条目 #{{ forloop.counter }}
+                                </span>
+                                <span class="remove-btn" onclick="removeItem(this)">
+                                    <i class="bi bi-x-circle-fill"></i>
+                                </span>
+                            </div>
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-5">
+                                    <label class="form-label small">课程</label>
+                                    <select name="course_ids[]" class="form-select form-select-sm" required>
+                                        <option value="">选择课程</option>
+                                        {% for c in courses %}
+                                        <option value="{{ c.pk }}" {% if item.course_id == c.pk %}selected{% endif %}>
+                                            {{ c.title }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small">岗位（留空=全员）</label>
+                                    <input type="text" name="positions[]" class="form-control form-control-sm"
+                                           value="{{ item.position }}" placeholder="如：PV专员">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">完成月数</label>
+                                    <input type="number" name="required_months[]" class="form-control form-control-sm"
+                                           value="{{ item.required_months }}" min="1" max="36">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">优先级</label>
+                                    <select name="priorities[]" class="form-select form-select-sm">
+                                        <option value="1" {% if item.priority == 1 %}selected{% endif %}>高</option>
+                                        <option value="2" {% if item.priority == 2 %}selected{% endif %}>中</option>
+                                        <option value="3" {% if item.priority == 3 %}selected{% endif %}>低</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addItem()">
+                            <i class="bi bi-plus-lg"></i> 添加课程
+                        </button>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-3">
+                    <a href="{% url 'training_matrix:list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> 返回
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-lg"></i> {% if is_create %}创建矩阵{% else %}保存修改{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let itemIndex = {{ matrix.items.count|default:0 }};
+
+    function addItem() {
+        const container = document.getElementById('itemsContainer');
+        const idx = itemIndex++;
+        const div = document.createElement('div');
+        div.className = 'item-row';
+        div.dataset.index = idx;
+        div.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="fw-bold small text-primary">
+                    <i class="bi bi-gear"></i> 条目 #${idx + 1}
+                </span>
+                <span class="remove-btn" onclick="removeItem(this)">
+                    <i class="bi bi-x-circle-fill"></i>
+                </span>
+            </div>
+            <div class="row g-2 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label small">课程</label>
+                    <select name="course_ids[]" class="form-select form-select-sm" required>
+                        <option value="">选择课程</option>
+                        {% for c in courses %}
+                        <option value="{{ c.pk }}">{{ c.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">岗位（留空=全员）</label>
+                    <input type="text" name="positions[]" class="form-control form-control-sm" placeholder="如：PV专员">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">完成月数</label>
+                    <input type="number" name="required_months[]" class="form-control form-control-sm" value="3" min="1" max="36">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">优先级</label>
+                    <select name="priorities[]" class="form-select form-select-sm">
+                        <option value="1">高</option>
+                        <option value="2" selected>中</option>
+                        <option value="3">低</option>
+                    </select>
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+    }
+
+    function removeItem(btn) {
+        const row = btn.closest('.item-row');
+        if (document.querySelectorAll('.item-row').length <= 1) {
+            alert('至少保留一个条目');
+            return;
+        }
+        row.remove();
+    }
+</script>
+{% endblock %}

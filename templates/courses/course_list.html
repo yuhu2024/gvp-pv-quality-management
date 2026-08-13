@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}课程中心 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h4><i class="bi bi-book"></i> 课程中心</h4>
+    </div>
+</div>
+
+<!-- 搜索和筛选 -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <form method="get" class="row g-3">
+            <div class="col-md-5">
+                <input type="text" name="search" class="form-control"
+                       placeholder="搜索课程..." value="{{ search_query }}">
+            </div>
+            <div class="col-md-3">
+                <select name="category" class="form-select">
+                    <option value="">全部分类</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if current_category == cat.id|stringformat:"s" %}selected{% endif %}>
+                        {{ cat.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> 搜索
+                </button>
+            </div>
+            <div class="col-md-2">
+                {% if user.is_staff or user.is_superuser %}
+                <a href="{% url 'courses:create' %}" class="btn btn-success w-100">
+                    <i class="bi bi-plus-circle"></i> 创建课程
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 课程列表 -->
+<div class="row">
+    {% for course in courses %}
+    <div class="col-md-3 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="card-title">{{ course.title }}</h6>
+                <p class="card-text text-muted small">
+                    {{ course.description|truncatechars:60 }}
+                </p>
+                <div class="d-flex justify-content-between align-items-center">
+                    {% if course.category %}
+                    <span class="badge bg-secondary">{{ course.category.name }}</span>
+                    {% endif %}
+                    <small class="text-muted">{{ course.created_at|date:"Y-m-d" }}</small>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="{% url 'courses:detail' course.pk %}" class="btn btn-sm btn-outline-primary w-100">
+                    进入学习
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">暂无课程。</div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 分页 -->
+{% if is_paginated %}
+<nav aria-label="课程分页">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo; 上一页</a>
+        </li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+        </li>
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">下一页 &raquo;</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

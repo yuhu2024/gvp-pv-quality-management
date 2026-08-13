@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}{{ plan.title }} - 培训计划{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'plans:list' %}">培训计划</a></li>
+                <li class="breadcrumb-item active">{{ plan.title }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- 计划概览 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h3>{{ plan.title }}</h3>
+                <div class="d-flex gap-2">
+                    <span class="badge {% if plan.status == 'in_progress' %}bg-success{% elif plan.status == 'completed' %}bg-secondary{% elif plan.status == 'expired' %}bg-danger{% else %}bg-warning{% endif %}">
+                        {{ plan.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            <div class="btn-group">
+                <a href="{% url 'plans:edit' plan.pk %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-pencil"></i> 编辑
+                </a>
+                <a href="{% url 'plans:assign' plan.pk %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-person-plus"></i> 分配任务
+                </a>
+                {% if plan.is_mandatory %}
+                <a href="{% url 'plans:mandatory_trainee' plan.pk %}" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-people"></i> 强制培训名单
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        <p>{{ plan.description }}</p>
+        <ul class="list-unstyled text-muted">
+            <li><i class="bi bi-calendar"></i> 时间范围：{{ plan.start_date }} ~ {{ plan.end_date }}</li>
+            <li><i class="bi bi-person"></i> 创建者：{{ plan.creator|default:"-" }}</li>
+            {% if plan.is_mandatory %}
+            <li class="text-danger">
+                <i class="bi bi-exclamation-circle"></i> 
+                <strong>强制培训</strong> - 
+                {% if plan.deadline %}截止日期：{{ plan.deadline }}{% endif %}
+                {% if plan.is_expired %}<span class="badge bg-danger ms-1">已逾期</span>{% endif %}
+            </li>
+            <li>
+                <i class="bi bi-repeat"></i> 
+                重考：{% if plan.allow_retake %}允许{% else %}不允许{% endif %}，
+                最大次数：{% if plan.max_attempts == 0 %}不限{% else %}{{ plan.max_attempts }}次{% endif %}
+            </li>
+            {% endif %}
+            {% if plan.courses.all %}
+            <li><i class="bi bi-book"></i> 关联课程：{{ plan.courses.all|join:", " }}</li>
+            {% endif %}
+            {% if plan.exams.all %}
+            <li><i class="bi bi-pencil-square"></i> 关联考试：{{ plan.exams.all|join:", " }}</li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+
+<!-- 任务列表 -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-list-check"></i> 任务列表（{{ tasks|length }}个）</h5>
+    </div>
+    <div class="card-body">
+        {% if tasks %}
+        <div class="list-group">
+            {% for task in tasks %}
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">
+                            <span class="badge bg-light text-dark">{{ forloop.counter }}</span>
+                            {{ task.title }}
+                        </h6>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-info">{{ task.get_task_type_display }}</span>
+                            {% if task.course %}
+                            <small class="text-muted"><i class="bi bi-book"></i> {{ task.course.title }}</small>
+                            {% endif %}
+                            {% if task.exam %}
+                            <small class="text-muted"><i class="bi bi-pencil-square"></i> {{ task.exam.title }}</small>
+                            {% endif %}
+                            {% if task.deadline %}
+                            <small class="text-muted"><i class="bi bi-calendar-event"></i> 截止：{{ task.deadline }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        {% for assignment in user_assignments %}
+                            {% if assignment.task == task %}
+                            <span class="badge {% if assignment.status == 'completed' %}bg-success{% elif assignment.status == 'in_progress' %}bg-warning{% elif assignment.status == 'overdue' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ assignment.get_status_display }}
+                            </span>
+                            {% endif %}
+                        {% empty %}
+                        <span class="badge bg-secondary">未分配</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <!-- 各用户完成情况 -->
+                {% if task_assignments %}
+                <div class="mt-2 ms-4">
+                    <small class="text-muted fw-bold">分配情况：</small>
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                        {% for assignment in task_assignments %}
+                            <span class="badge {% if assignment.status == 'completed' %}bg-success{% elif assignment.status == 'in_progress' %}bg-warning text-dark{% elif assignment.status == 'overdue' %}bg-danger{% else %}bg-light text-dark{% endif %}" title="{{ assignment.user }}">
+                                {{ assignment.user.username }}
+                                {% if assignment.status == 'completed' and assignment.completion_duration %}
+                                ({{ assignment.completion_duration }}s)
+                                {% endif %}
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">暂无任务。</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

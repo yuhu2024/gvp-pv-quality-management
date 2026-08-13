@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}强制培训总览 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'courses:admin_dashboard' %}">管理中心</a></li>
+                <li class="breadcrumb-item active">强制培训总览</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4><i class="bi bi-clipboard-check"></i> 强制培训总览</h4>
+    <a href="{% url 'plans:create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> 创建强制培训计划
+    </a>
+</div>
+
+<!-- 筛选 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted">状态筛选</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">全部状态</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-sm btn-primary w-100">
+                    <i class="bi bi-funnel"></i> 筛选
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 统计卡片 -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">强制培训计划</h6>
+                        <h2 class="mt-2 mb-0">{{ plan_stats|length }}</h2>
+                    </div>
+                    <i class="bi bi-clipboard-check" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">已通过人数</h6>
+                        <h2 class="mt-2 mb-0">
+                            {% widthratio plan_stats|length 1 1 %}
+                        </h2>
+                    </div>
+                    <i class="bi bi-check-circle" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">待完成人数</h6>
+                        <h2 class="mt-2 mb-0">-</h2>
+                    </div>
+                    <i class="bi bi-hourglass-split" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">已逾期人数</h6>
+                        <h2 class="mt-2 mb-0">-</h2>
+                    </div>
+                    <i class="bi bi-exclamation-triangle" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 强制培训计划列表 -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-list-check"></i> 强制培训计划列表</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if plan_stats %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>计划名称</th>
+                        <th>状态</th>
+                        <th>时限</th>
+                        <th class="text-center">总人数</th>
+                        <th class="text-center">已通过</th>
+                        <th class="text-center">未开始</th>
+                        <th class="text-center">需重考</th>
+                        <th class="text-center">已逾期</th>
+                        <th class="text-center">通过率</th>
+                        <th class="text-center">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in plan_stats %}
+                    <tr>
+                        <td>
+                            <strong>{{ stat.plan.title }}</strong>
+                            <br>
+                            <small class="text-muted">{{ stat.plan.description|truncatechars:50 }}</small>
+                        </td>
+                        <td>
+                            <span class="badge {% if stat.plan.status == 'in_progress' %}bg-success{% elif stat.plan.status == 'completed' %}bg-secondary{% elif stat.plan.status == 'expired' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                {{ stat.plan.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if stat.plan.deadline %}
+                            <span class="{% if stat.plan.is_expired %}text-danger fw-bold{% endif %}">
+                                {{ stat.plan.deadline }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">未设置</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">{{ stat.total }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-success">{{ stat.passed }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-secondary">{{ stat.pending }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-warning text-dark">{{ stat.failed }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-danger">{{ stat.overdue }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% if stat.total > 0 %}
+                            <div class="progress" style="height: 20px; min-width: 80px;">
+                                <div class="progress-bar bg-success" 
+                                     style="width: {% widthratio stat.passed stat.total 100 %}%">
+                                    {% widthratio stat.passed stat.total 100 %}%
+                                </div>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <a href="{% url 'plans:mandatory_trainee' stat.plan.pk %}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-people"></i> 管理
+                            </a>
+                            <a href="{% url 'plans:detail' stat.plan.pk %}" 
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+            <p class="text-muted mt-3">暂无强制培训计划</p>
+            <a href="{% url 'plans:create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> 创建第一个强制培训计划
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 说明 -->
+<div class="card mt-4">
+    <div class="card-body">
+        <h6><i class="bi bi-info-circle"></i> 强制培训规则说明</h6>
+        <ul class="text-muted small mb-0">
+            <li><strong>培训时限</strong>：所有强制参训人员必须在截止日期前完成培训和考试</li>
+            <li><strong>考核通过</strong>：考试达到及格分数后视为完成培训</li>
+            <li><strong>未通过处理</strong>：考试不通过者需继续学习并重新考试，直到通过为止</li>
+            <li><strong>重考次数</strong>：可设置最大考试次数，0表示不限次数</li>
+            <li><strong>逾期处理</strong>：超过时限未通过者标记为"已逾期"，需联系管理员处理</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

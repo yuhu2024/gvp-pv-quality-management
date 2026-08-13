@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}学习排行榜 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rank-medal {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        font-weight: bold;
+        font-size: 14px;
+        color: #fff;
+    }
+    .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); }
+    .rank-2 { background: linear-gradient(135deg, #C0C0C0, #A9A9A9); }
+    .rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); }
+    .rank-normal {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        font-weight: bold;
+        font-size: 14px;
+        background: #e9ecef;
+        color: #495057;
+    }
+    .nav-tabs .nav-link {
+        color: #495057;
+    }
+    .nav-tabs .nav-link.active {
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'users:dashboard' %}">首页</a></li>
+        <li class="breadcrumb-item active">学习排行榜</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block page_header %}
+<h4 class="mb-4"><i class="bi bi-trophy me-2"></i>学习排行榜</h4>
+{% endblock %}
+
+{% block content %}
+<!-- 筛选栏 -->
+<div class="card mb-4">
+    <div class="card-body py-3">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="dept" class="form-label small text-muted">部门筛选</label>
+                <select class="form-select form-select-sm" id="dept" name="dept">
+                    <option value="">全部部门</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.pk }}" {% if dept_id|slugify == dept.pk|slugify %}selected{% endif %}>
+                        {{ dept.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="period" class="form-label small text-muted">时间范围</label>
+                <select class="form-select form-select-sm" id="period" name="period">
+                    <option value="all" {% if period == 'all' %}selected{% endif %}>全部</option>
+                    <option value="week" {% if period == 'week' %}selected{% endif %}>本周</option>
+                    <option value="month" {% if period == 'month' %}selected{% endif %}>本月</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-sm btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i>筛选
+                </button>
+            </div>
+            <!-- 保留当前 tab 参数 -->
+            <input type="hidden" name="tab" value="{{ tab }}">
+        </form>
+    </div>
+</div>
+
+<!-- Tab 切换 -->
+<ul class="nav nav-tabs mb-4" id="rankTabs">
+    <li class="nav-item">
+        <a class="nav-link {% if tab == 'duration' %}active{% endif %}"
+           href="?tab=duration&dept={{ dept_id }}&period={{ period }}">
+            <i class="bi bi-clock-history me-1"></i>学习时长榜
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if tab == 'score' %}active{% endif %}"
+           href="?tab=score&dept={{ dept_id }}&period={{ period }}">
+            <i class="bi bi-star me-1"></i>考试成绩榜
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if tab == 'completion' %}active{% endif %}"
+           href="?tab=completion&dept={{ dept_id }}&period={{ period }}">
+            <i class="bi bi-check-circle me-1"></i>课程完成榜
+        </a>
+    </li>
+</ul>
+
+<!-- 排行数据 -->
+{% if rankings %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th style="width: 60px;">排名</th>
+                <th>用户</th>
+                <th>部门</th>
+                <th>{{ value_label }}</th>
+                {% if tab == 'score' %}
+                <th>考试次数</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in rankings %}
+            <tr>
+                <td class="text-center">
+                    {% if item.rank == 1 %}
+                    <span class="rank-medal rank-1"><i class="bi bi-trophy-fill"></i></span>
+                    {% elif item.rank == 2 %}
+                    <span class="rank-medal rank-2"><i class="bi bi-trophy-fill"></i></span>
+                    {% elif item.rank == 3 %}
+                    <span class="rank-medal rank-3"><i class="bi bi-trophy-fill"></i></span>
+                    {% else %}
+                    <span class="rank-normal">{{ item.rank }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        {% if item.avatar %}
+                        <img src="{{ item.avatar.url }}" alt="" class="rounded-circle me-2" width="32" height="32">
+                        {% else %}
+                        <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width:32px;height:32px;font-size:14px;">
+                            {{ item.display_name.0 }}
+                        </div>
+                        {% endif %}
+                        <span class="fw-semibold">{{ item.display_name }}</span>
+                    </div>
+                </td>
+                <td>{{ item.department }}</td>
+                <td>
+                    <span class="fw-bold text-primary">{{ item.value_display }}</span>
+                </td>
+                {% if tab == 'score' %}
+                <td>{{ item.extra }}</td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-trophy" style="font-size: 3rem; color: #ccc;"></i>
+    <p class="text-muted mt-3">暂无排行数据</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load exam_filters %}
+
+{% block title %}在线考试 - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12 d-flex justify-content-between align-items-center">
+        <h4><i class="bi bi-pencil-square"></i> 在线考试</h4>
+        {% if user.is_staff or user.is_superuser %}
+        <a href="{% url 'exams:create' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> 创建考试
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 考试列表 -->
+<div class="row">
+    {% for exam in exams %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ exam.title }}</h5>
+                <p class="card-text text-muted small">
+                    {{ exam.description|truncatechars:80 }}
+                </p>
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-clock"></i> 考试时长：{{ exam.duration }}分钟</li>
+                    <li><i class="bi bi-star"></i> 总分：{{ exam.total_score }}分</li>
+                    <li><i class="bi bi-check-circle"></i> 及格分：{{ exam.pass_score }}分</li>
+                    {% if exam.course %}
+                    <li><i class="bi bi-book"></i> 关联课程：{{ exam.course.title }}</li>
+                    {% endif %}
+                </ul>
+                {% if exam.pk in best_scores %}
+                <div class="alert alert-light py-1 px-2 small">
+                    <i class="bi bi-trophy"></i> 最高分：{{ best_scores|dict_get:exam.pk }}/{{ exam.total_score }}
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-transparent">
+                <a href="{% url 'exams:take' exam.pk %}" class="btn btn-sm btn-primary w-100">
+                    <i class="bi bi-play-circle"></i> 开始考试
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">暂无可用考试。</div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 分页 -->
+{% if is_paginated %}
+<nav aria-label="考试分页">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
+        </li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+        </li>
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

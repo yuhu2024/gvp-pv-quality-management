@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}知识点管理 - 题库管理{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="bi bi-tags"></i> 知识点管理</h4>
+                <div>
+                    <a href="{% url 'question_bank:kp_create' %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-circle"></i> 添加知识点</a>
+                    <a href="{% url 'question_bank:list' %}" class="btn btn-sm btn-secondary">返回题库</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>名称</th>
+                                <th>上级知识点</th>
+                                <th>描述</th>
+                                <th>题目数</th>
+                                <th>排序</th>
+                                <th>创建时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for kp in knowledge_points %}
+                            <tr>
+                                <td><strong>{{ kp.name }}</strong></td>
+                                <td>{{ kp.parent.name|default:"-" }}</td>
+                                <td>{{ kp.description|truncatewords:10 }}</td>
+                                <td><span class="badge bg-info">{{ kp.questions.count }}</span></td>
+                                <td>{{ kp.order }}</td>
+                                <td>{{ kp.created_at|date:"Y-m-d" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">暂无知识点</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

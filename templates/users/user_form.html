@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-person-plus"></i> {{ page_title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_username" class="form-label">用户名 <span class="text-danger">*</span></label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                            <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="id_employee_id" class="form-label">工号</label>
+                            {{ form.employee_id }}
+                            {% if form.employee_id.errors %}
+                            <div class="text-danger small mt-1">{{ form.employee_id.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_last_name" class="form-label">姓</label>
+                            {{ form.last_name }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="id_first_name" class="form-label">名</label>
+                            {{ form.first_name }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_email" class="form-label">邮箱</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                        <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_phone" class="form-label">手机号</label>
+                        {{ form.phone }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_department" class="form-label">部门</label>
+                            {{ form.department }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="id_role" class="form-label">角色</label>
+                            {{ form.role }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_gender" class="form-label">性别</label>
+                            {{ form.gender }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="id_position" class="form-label">职位</label>
+                            {{ form.position }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_password" class="form-label">
+                                密码 <span class="text-danger">*</span>
+                                {% if form.instance.pk %}<small class="text-muted">(留空则不修改)</small>{% endif %}
+                            </label>
+                            {{ form.password }}
+                            {% if form.password.errors %}
+                            <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="id_password_confirm" class="form-label">
+                                确认密码 <span class="text-danger">*</span>
+                            </label>
+                            {{ form.password_confirm }}
+                            {% if form.password_confirm.errors %}
+                            <div class="text-danger small mt-1">{{ form.password_confirm.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mb-3 form-check">
+                        {{ form.is_active }}
+                        <label for="id_is_active" class="form-check-label">是否激活</label>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg"></i> 保存
+                        </button>
+                        <a href="{% url 'users:user_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg"></i> 取消
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

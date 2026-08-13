@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}审核课程 - {{ course.title }} - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4><i class="bi bi-check2-square"></i> 审核课程</h4>
+    <a href="{% url 'courses:review_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> 返回审核列表
+    </a>
+</div>
+
+<div class="row">
+    <!-- 课程信息 -->
+    <div class="col-lg-8">
+        <div class="card mb-3" style="border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-book"></i> {{ course.title }}</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <th style="width: 120px;" class="text-muted">分类</th>
+                        <td>{% if course.category %}{{ course.category.name }}{% else %}-{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">创建者</th>
+                        <td>{{ course.creator.get_full_name|default:course.creator.username }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">创建时间</th>
+                        <td>{{ course.created_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">课程描述</th>
+                        <td>{{ course.description|default:"<span class='text-muted'>暂无描述</span>" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- 课程资料 -->
+        <div class="card" style="border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="bi bi-folder"></i> 课程资料（{{ course.materials.count }} 份）</h6>
+            </div>
+            {% if course.materials.all %}
+            <div class="list-group list-group-flush">
+                {% for material in course.materials.all %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-file-earmark me-2"></i>{{ material.title }}
+                        <span class="badge bg-light text-dark ms-2">{{ material.get_file_type_display }}</span>
+                    </div>
+                    <small class="text-muted">{{ material.get_file_size_display }}</small>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="card-body text-muted">暂无资料</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 审核操作 -->
+    <div class="col-lg-4">
+        <div class="card" style="border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="bi bi-pencil-square"></i> 审核意见</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" id="reviewForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="review_note" class="form-label">审核说明</label>
+                        <textarea name="review_note" id="review_note" class="form-control" rows="4"
+                                  placeholder="请输入审核意见（可选）"></textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-success" onclick="submitReview('approve')">
+                            <i class="bi bi-check-circle"></i> 通过审核
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="submitReview('reject')">
+                            <i class="bi bi-x-circle"></i> 拒绝审核
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function submitReview(action) {
+    var note = document.getElementById('review_note').value;
+    if (action === 'reject' && !note.trim()) {
+        if (!confirm('拒绝审核时建议填写审核意见，确定继续吗？')) {
+            return;
+        }
+    }
+    var form = document.getElementById('reviewForm');
+    var hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'action';
+    hidden.value = action;
+    form.appendChild(hidden);
+    form.submit();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}审核资料 - {{ material.title }} - {{ SYSTEM_NAME }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4><i class="bi bi-check2-square"></i> 审核资料</h4>
+    <a href="{% url 'courses:detail' material.course.pk %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> 返回课程详情
+    </a>
+</div>
+
+<div class="row">
+    <!-- 资料信息 -->
+    <div class="col-lg-8">
+        <div class="card mb-3" style="border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="bi bi-file-earmark"></i> {{ material.title }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <th style="width: 120px;" class="text-muted">所属课程</th>
+                        <td><a href="{% url 'courses:detail' material.course.pk %}" class="text-decoration-none">{{ material.course.title }}</a></td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">资料类型</th>
+                        <td><span class="badge bg-primary">{{ material.get_file_type_display }}</span></td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">文件大小</th>
+                        <td>{{ material.get_file_size_display }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">上传时间</th>
+                        <td>{{ material.upload_time|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    {% if material.description %}
+                    <tr>
+                        <th class="text-muted">描述</th>
+                        <td>{{ material.description }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+
+                {% if material.file %}
+                <hr>
+                <h6 class="mb-3">文件预览</h6>
+                {% if material.file_type == 'video' %}
+                <video controls style="max-width: 100%; max-height: 400px; background: #000;">
+                    <source src="{{ material.file.url }}" type="video/mp4">
+                    您的浏览器不支持视频播放。
+                </video>
+                {% elif material.file_type == 'pdf' %}
+                <embed src="{{ material.file.url }}" type="application/pdf" style="width: 100%; height: 500px;" />
+                {% else %}
+                <p><a href="{{ material.file.url }}" class="btn btn-outline-primary btn-sm" target="_blank">
+                    <i class="bi bi-download"></i> 下载查看
+                </a></p>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 审核操作 -->
+    <div class="col-lg-4">
+        <div class="card" style="border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="bi bi-pencil-square"></i> 审核意见</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" id="reviewForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="review_note" class="form-label">审核说明</label>
+                        <textarea name="review_note" id="review_note" class="form-control" rows="4"
+                                  placeholder="请输入审核意见（可选）"></textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-success" onclick="submitReview('approve')">
+                            <i class="bi bi-check-circle"></i> 通过审核
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="submitReview('reject')">
+                            <i class="bi bi-x-circle"></i> 拒绝审核
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function submitReview(action) {
+    var note = document.getElementById('review_note').value;
+    if (action === 'reject' && !note.trim()) {
+        if (!confirm('拒绝审核时建议填写审核意见，确定继续吗？')) {
+            return;
+        }
+    }
+    var form = document.getElementById('reviewForm');
+    var hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'action';
+    hidden.value = action;
+    form.appendChild(hidden);
+    form.submit();
+}
+</script>
+{% endblock %}
