@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SystemConfig, ScoreWeightConfig
+from .models import SystemConfig, ScoreWeightConfig, SystemTimeOffset
 
 
 @admin.register(SystemConfig)
@@ -60,3 +60,12 @@ def _get_client_ip(request):
     if x_forwarded_for:
         return x_forwarded_for.split(',')[0].strip()
     return request.META.get('REMOTE_ADDR')
+
+
+@admin.register(SystemTimeOffset)
+class SystemTimeOffsetAdmin(admin.ModelAdmin):
+    list_display = ['id', 'is_active', 'offset_seconds', 'access_key', 'last_modified_by', 'updated_at']
+    list_display_links = ['id', 'is_active']
+    list_filter = ['is_active']
+    search_fields = ['access_key']
+    list_editable = ['offset_seconds']

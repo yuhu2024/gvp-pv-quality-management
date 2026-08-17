@@ -95,3 +95,57 @@ class ScoreWeightConfig(models.Model):
     def clean(self):
         if self.video_weight + self.material_weight + self.exam_weight != 100:
             raise ValidationError('三项权重之和必须等于100')
+
+
+class SystemTimeOffset(models.Model):
+    """系统时间偏移配置（隐藏功能）
+
+    用于在后台调整系统显示/记录的时间。
+    偏移量以秒为单位，正值表示时间快进，负值表示时间回退。
+    只允许超级管理员通过隐藏URL访问。
+    """
+    offset_seconds = models.BigIntegerField(
+        '时间偏移（秒）', default=0,
+        help_text='正数=时间快进，负数=时间回退。如 86400=快进1天，-3600=回退1小时'
+    )
+    is_active = models.BooleanField('是否启用', default=False, help_text='关闭后系统使用真实时间')
+    access_key = models.CharField(
+        '访问密钥', max_length=128, default='JHM-PV-2026-TIME',
+        help_text='隐藏页面的访问密钥，修改后需使用新密钥访问'
+    )
+    last_modified_by = models.ForeignKey(
+        'users.User', on_delete=models.SET_NULL, null=True, blank=True,
+        verbose_name='最后修改人'
+    )
+    created_at = models.DateTimeField('创建时间', auto_now_add=True)
+    updated_at = models.DateTimeField('更新时间', auto_now=True)
+
+    class Meta:
+        verbose_name = '系统时间偏移'
+        verbose_name_plural = '系统时间偏移'
+
+    def __str__(self):
+        status = '启用' if self.is_active else '关闭'
+        return f'时间偏移({status}): {self.offset_seconds}秒'
+
+    @classmethod
+    def get_offset_seconds(cls):
+        """获取当前偏移秒数（未配置或未启用则返回0）"""
+        try:
+            obj = cls.objects.first()
+            if obj and obj.is_active:
+                return obj.offset_seconds
+        except Exception:
+            pass
+        return 0
+
+    @classmethod
+    def get_access_key(cls):
+        """获取访问密钥"""
+        try:
+            obj = cls.objects.first()
+            if obj:
+                return obj.access_key
+        except Exception:
+            pass
+        return 'JHM-PV-2026-TIME'

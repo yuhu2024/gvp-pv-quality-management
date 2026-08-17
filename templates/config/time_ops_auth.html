@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}系统维护{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-shield-lock-fill text-primary" style="font-size: 2.5rem;"></i>
+                        <h4 class="mt-2 mb-0">系统维护入口</h4>
+                        <p class="text-muted small mt-1">请输入访问密钥</p>
+                    </div>
+
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} py-2">{{ message }}</div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <form method="get" action="{% url 'config:time_ops' %}">
+                        <div class="mb-3">
+                            <label class="form-label">访问密钥</label>
+                            <input type="password" name="key" class="form-control" placeholder="请输入访问密钥" required autofocus>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-unlock-fill"></i> 验证
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

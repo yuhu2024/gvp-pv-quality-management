@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}系统维护{% endblock %}
+
+{% block extra_css %}
+<style>
+    .time-card {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .time-display {
+        font-size: 1.6rem;
+        font-weight: 700;
+        font-family: 'Courier New', monospace;
+    }
+    .status-badge {
+        font-size: 0.85rem;
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+    .status-active {
+        background: #fff3cd;
+        color: #856404;
+    }
+    .status-normal {
+        background: #d4edda;
+        color: #155724;
+    }
+    .quick-btn {
+        min-width: 80px;
+    }
+    .offset-info {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0"><i class="bi bi-clock-history text-primary"></i> 系统时间维护</h3>
+        <span class="badge {{ is_offset_active|yesno:'status-active,status-normal' }}">
+            {% if is_offset_active %}时间已偏移{% else %}正常时间{% endif %}
+        </span>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} py-2">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card time-card border-success">
+                <div class="card-header bg-light text-success py-2">
+                    <i class="bi bi-clock"></i> 真实时间
+                </div>
+                <div class="card-body text-center py-3">
+                    <div class="time-display text-success">{{ real_now|date:"Y-m-d H:i:s" }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card time-card {% if is_offset_active %}border-warning{% else %}border-primary{% endif %}">
+                <div class="card-header bg-light {% if is_offset_active %}text-warning{% else %}text-primary{% endif %} py-2">
+                    <i class="bi bi-display"></i> 系统显示时间
+                </div>
+                <div class="card-body text-center py-3">
+                    <div class="time-display {% if is_offset_active %}text-warning{% else %}text-primary{% endif %}">
+                        {{ system_now|date:"Y-m-d H:i:s" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="offset-info p-3 mb-4 text-center">
+        {% if is_offset_active %}
+        <strong>当前偏移：</strong>
+        <span class="text-warning">
+            {% if offset_total_seconds > 0 %}+{% endif %}{{ offset_total_seconds|floatformat:0 }} 秒
+            （约 {{ offset_days|floatformat:0 }} 天 {{ offset_hours }} 小时 {{ offset_minutes }} 分）
+        </span>
+        {% else %}
+        <span class="text-muted">未启用时间偏移，系统使用真实时间</span>
+        {% endif %}
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-light py-2">
+            <strong><i class="bi bi-arrow-clockwise"></i> 快捷偏移</strong>
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2 justify-content-center">
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="quick_offset">
+                    <input type="hidden" name="access_key" value="{{ time_config.access_key }}">
+                    <button type="submit" name="quick_value" value="-30d" class="btn btn-outline-secondary btn-sm quick-btn">回退30天</button>
+                </form>
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="quick_offset">
+                    <input type="hidden" name="access_key" value="{{ time_config.access_key }}">
+                    <button type="submit" name="quick_value" value="-7d" class="btn btn-outline-secondary btn-sm quick-btn">回退7天</button>
+                </form>
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="quick_offset">
+                    <input type="hidden" name="access_key" value="{{ time_config.access_key }}">
+                    <button type="submit" name="quick_value" value="-1d" class="btn btn-outline-secondary btn-sm quick-btn">回退1天</button>
+                </form>
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="quick_offset">
+                    <input type="hidden" name="access_key" value="{{ time_config.access_key }}">
+                    <button type="submit" name="quick_value" value="1d" class="btn btn-outline-warning btn-sm quick-btn">快进1天</button>
+                </form>
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="quick_offset">
+                    <input type="hidden" name="access_key" value="{{ time_config.access_key }}">
+                    <button type="submit" name="quick_value" value="2d" class="btn btn-outline-warning btn-sm quick-btn">快进2天</button>
+                </form>
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="quick_offset">
+                    <input type="hidden" name="access_key" value="{{ time_config.access_key }}">
+                    <button type="submit" name="quick_value" value="3d" class="btn btn-outline-warning btn-sm quick-btn">快进3天</button>
+                </form>
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="quick_offset">
+                    <input type="hidden" name="access_key" value="{{ time_config.access_key }}">
+                    <button type="submit" name="quick_value" value="7d" class="btn btn-outline-warning btn-sm quick-btn">快进7天</button>
+                </form>
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="quick_offset">
+                    <input type="hidden" name="access_key" value="{{ time_config.access_key }}">
+                    <button type="submit" name="quick_value" value="14d" class="btn btn-outline-warning btn-sm quick-btn">快进14天</button>
+                </form>
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="quick_offset">
+                    <input type="hidden" name="access_key" value="{{ time_config.access_key }}">
+                    <button type="submit" name="quick_value" value="30d" class="btn btn-outline-warning btn-sm quick-btn">快进30天</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-light py-2">
+                    <strong><i class="bi bi-sliders"></i> 自定义偏移</strong>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_offset">
+                        <input type="hidden" name="access_key" value="{{ time_config.access_key }}">
+                        <div class="row g-2 mb-3">
+                            <div class="col-4">
+                                <label class="form-label small">天</label>
+                                <input type="number" name="days" value="{{ offset_days }}" class="form-control" style="width:100%">
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label small">小时</label>
+                                <input type="number" name="hours" value="{{ offset_hours }}" class="form-control" min="0" max="23">
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label small">分钟</label>
+                                <input type="number" name="minutes" value="{{ offset_minutes }}" class="form-control" min="0" max="59">
+                            </div>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="is_active" id="is_active" {% if is_offset_active %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">启用时间偏移</label>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">
+                                <i class="bi bi-check-lg"></i> 保存偏移
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-light py-2">
+                    <strong><i class="bi bi-calendar-event"></i> 设置目标时间</strong>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="set_target">
+                        <input type="hidden" name="access_key" value="{{ time_config.access_key }}">
+                        <div class="mb-3">
+                            <label class="form-label">目标日期时间</label>
+                            <input type="datetime-local" name="target_datetime" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100">
+                            <i class="bi bi-arrow-right-circle"></i> 设置系统时间到该时刻
+                        </button>
+                    </form>
+                    <hr>
+                    <form method="post" class="mt-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="reset">
+                        <input type="hidden" name="access_key" value="{{ time_config.access_key }}">
+                        <button type="submit" class="btn btn-outline-danger w-100">
+                            <i class="bi bi-arrow-counterclockwise"></i> 重置为真实时间
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4 border-warning">
+        <div class="card-header bg-warning bg-opacity-10 py-2">
+            <strong><i class="bi bi-key"></i> 访问密钥管理</strong>
+        </div>
+        <div class="card-body">
+            <p class="small text-muted mb-2">当前密钥：<code>{{ time_config.access_key }}</code></p>
+            <form method="post" class="row g-2 align-items-end">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_key">
+                <div class="col-auto flex-grow-1">
+                    <label class="form-label small">新访问密钥（至少6个字符）</label>
+                    <input type="text" name="new_access_key" class="form-control" placeholder="输入新密钥" minlength="6" required>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-outline-secondary">
+                        <i class="bi bi-pencil"></i> 更新密钥
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="text-center mt-4">
+        <p class="text-muted small">
+            最后修改：{% if time_config.last_modified_by %}{{ time_config.last_modified_by }}{% else %}-{% endif %}
+            | {{ time_config.updated_at|date:"Y-m-d H:i:s" }}
+        </p>
+        <a href="/dashboard/" class="btn btn-link btn-sm">返回首页</a>
+    </div>
+</div>
+{% endblock %}
