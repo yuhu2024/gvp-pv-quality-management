@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+{% load config_filters %}
+
+{% block title %}系统维护{% endblock %}
+
+{% block extra_css %}
+<style>
+    .record-type-tab.active {
+        background: #0d6efd;
+        color: #fff;
+        border-color: #0d6efd;
+    }
+    .time-cell {
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+    }
+    .auto-badge {
+        font-size: 0.7rem;
+        padding: 1px 6px;
+        border-radius: 10px;
+        background: #e2e3e5;
+        color: #6c757d;
+    }
+    .table-records {
+        font-size: 0.85rem;
+    }
+    .table-records th {
+        white-space: nowrap;
+    }
+    .filter-bar {
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    .batch-section {
+        background: #fff3cd;
+        border: 1px solid #ffe082;
+        border-radius: 8px;
+    }
+    .record-info {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .inline-time-form input {
+        font-size: 0.8rem;
+        padding: 2px 6px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0"><i class="bi bi-clock-history text-primary"></i> 培训记录时间维护</h4>
+        <div>
+            <a href="/settings/time-ops/?key={{ access_key }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> 系统时间
+            </a>
+            <a href="/dashboard/" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-house"></i> 首页
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} py-2">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- 记录类型选择 -->
+    <div class="card mb-3">
+        <div class="card-body py-2">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <span class="text-muted small me-2">记录类型：</span>
+                {% for key, config in record_types.items %}
+                <a href="?key={{ access_key }}&record_type={{ key }}" 
+                   class="btn btn-outline-primary btn-sm record-type-tab {% if record_type == key %}active{% endif %}">
+                    {{ config.label }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 筛选栏 -->
+    <div class="card mb-3">
+        <div class="card-body py-3 filter-bar">
+            <form method="get" class="row g-2 align-items-end">
+                <input type="hidden" name="key" value="{{ access_key }}">
+                <input type="hidden" name="record_type" value="{{ record_type }}">
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">按用户筛选</label>
+                    <select name="user_id" class="form-select form-select-sm">
+                        <option value="">全部用户</option>
+                        {% for u in users %}
+                        <option value="{{ u.id }}" {% if user_filter == u.id|stringformat:"s" %}selected{% endif %}>
+                            {{ u.employee_id|default:"" }} {{ u.last_name }}{{ u.first_name|default:u.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">开始日期</label>
+                    <input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">结束日期</label>
+                    <input type="date" name="date_to" value="{{ date_to }}" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-funnel"></i> 筛选
+                    </button>
+                </div>
+                <div class="col-md-3 text-end">
+                    <span class="text-muted small">共 {{ page_obj.paginator.count }} 条记录</span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 批量偏移 -->
+    <div class="batch-section p-3 mb-3">
+        <form method="post" id="batch_shift_form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="batch_shift">
+            <input type="hidden" name="access_key" value="{{ access_key }}">
+            <input type="hidden" name="record_type" value="{{ record_type }}">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small">批量偏移字段</label>
+                    <select name="field_name" class="form-select form-select-sm">
+                        {% for fname, fconfig in type_config.fields.items %}
+                        <option value="{{ fname }}">{{ fconfig.label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">天数</label>
+                    <input type="number" name="shift_days" value="0" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">小时</label>
+                    <input type="number" name="shift_hours" value="0" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">分钟</label>
+                    <input type="number" name="shift_minutes" value="0" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-warning btn-sm w-100">
+                        <i class="bi bi-arrow-repeat"></i> 批量偏移选中记录
+                    </button>
+                </div>
+            </div>
+            <p class="small text-muted mb-0 mt-2">
+                <i class="bi bi-info-circle"></i> 勾选下方记录左侧复选框，输入偏移量后点击批量偏移。
+                正数=快进，负数=回退。仅影响选中的记录。
+            </p>
+        </form>
+    </div>
+
+    <!-- 记录表格 -->
+    <div class="card">
+        <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+            <strong><i class="bi bi-list-task"></i> {{ record_type_label }}</strong>
+            <span class="text-muted small">第 {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} 页</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-records mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 36px;">
+                                <input type="checkbox" id="select_all" class="form-check-input">
+                            </th>
+                            <th style="width: 50px;">ID</th>
+                            <th>记录信息</th>
+                            {% for fname, fconfig in type_config.fields.items %}
+                            <th>
+                                {{ fconfig.label }}
+                                {% if fconfig.bypass_auto %}
+                                <span class="auto-badge">自动</span>
+                                {% endif %}
+                            </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in records_with_times %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="record_ids" value="{{ item.record.id }}" 
+                                       form="batch_shift_form" class="form-check-input record-checkbox">
+                            </td>
+                            <td class="text-muted">{{ item.record.id }}</td>
+                            <td>
+                                <div class="record-info" title="{{ item.record }}">
+                                    {{ item.record }}
+                                </div>
+                            </td>
+                            {% for tf in item.time_field_list %}
+                            <td class="time-cell">
+                                <div class="text-nowrap mb-1">
+                                    {% if tf.value %}
+                                        {{ tf.value|date:"Y-m-d H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </div>
+                                <form method="post" class="inline-time-form d-flex gap-1">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="update_record_time">
+                                    <input type="hidden" name="access_key" value="{{ access_key }}">
+                                    <input type="hidden" name="record_type" value="{{ record_type }}">
+                                    <input type="hidden" name="record_id" value="{{ item.record.id }}">
+                                    <input type="hidden" name="field_name" value="{{ tf.name }}">
+                                    <input type="datetime-local" name="new_value" 
+                                           value="{{ tf.value_local }}" 
+                                           class="form-control form-control-sm" style="width:170px;">
+                                    <button type="submit" class="btn btn-outline-primary btn-sm py-0 px-1"
+                                            title="保存{{ tf.label }}">
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                </form>
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="{{ field_count|add:3 }}" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                                <p class="mt-2">暂无记录</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if page_obj.has_other_pages %}
+        <div class="card-footer bg-light py-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    {% if page_obj.has_previous %}
+                    <a href="?key={{ access_key }}&record_type={{ record_type }}&user_id={{ user_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ page_obj.previous_page_number }}" 
+                       class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-chevron-left"></i> 上一页
+                    </a>
+                    {% endif %}
+                </div>
+                <span class="text-muted small">第 {{ page_obj.number }} 页 / 共 {{ page_obj.paginator.num_pages }} 页</span>
+                <div>
+                    {% if page_obj.has_next %}
+                    <a href="?key={{ access_key }}&record_type={{ record_type }}&user_id={{ user_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ page_obj.next_page_number }}" 
+                       class="btn btn-outline-secondary btn-sm">
+                        下一页 <i class="bi bi-chevron-right"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="text-center mt-3">
+        <p class="text-muted small">
+            <i class="bi bi-shield-check"></i> 所有修改操作均记录到操作日志 | 
+            最后修改：{% if time_config.last_modified_by %}{{ time_config.last_modified_by }}{% else %}-{% endif %}
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 全选/取消全选
+document.getElementById('select_all').addEventListener('change', function() {
+    document.querySelectorAll('.record-checkbox').forEach(cb => {
+        cb.checked = this.checked;
+    });
+});
+
+// 批量偏移确认
+document.getElementById('batch_shift_form').addEventListener('submit', function(e) {
+    const checked = document.querySelectorAll('.record-checkbox:checked');
+    if (checked.length === 0) {
+        e.preventDefault();
+        alert('请先勾选要批量偏移的记录');
+        return;
+    }
+    if (!confirm(`确认对 ${checked.length} 条选中的记录进行时间偏移？`)) {
+        e.preventDefault();
+    }
+});
+
+// 行内表单提交确认
+document.querySelectorAll('.inline-time-form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        const input = this.querySelector('input[type="datetime-local"]');
+        const fieldLabel = this.querySelector('button').title.replace('保存', '');
+        // 允许空值提交（清除时间）
+        if (!confirm(`确认修改${fieldLabel}？`)) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

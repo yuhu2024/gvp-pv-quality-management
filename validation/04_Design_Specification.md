@@ -1,14 +1,14 @@
 # 设计规格 (Design Specification)
 
 **文档编号：** VAL-DS-001  
-**版本：** 2.0  
-**生效日期：** 2026-07-24  
+**版本：** 3.0  
+**生效日期：** 2026-08-18  
 
 ---
 
 ## 1. 目的
 
-本文档描述 君合盟药物警戒君合盟药物警戒培训管理系统 (PV Training Management System) 的技术架构、数据模型设计、接口设计和安全设计，为系统开发和验证提供详细的技术蓝图。
+本文档描述 君合盟药物警戒培训管理系统 (PV Training Management System) 的技术架构、数据模型设计、接口设计和安全设计，为系统开发和验证提供详细的技术蓝图。
 
 ## 2. 系统架构
 
@@ -60,16 +60,17 @@ training_system/
 │   ├── exams/          # 考试、题目、答卷、成绩
 │   ├── plans/          # 培训计划、任务、分配
 │   ├── logs/           # 学习日志、操作日志
-│   ├── config/         # 系统配置、成绩权重
+│   ├── config/         # 系统配置、成绩权重、时间管理
 │   ├── certificates/   # 证书模板、证书
 │   ├── ranking/        # 学习排名
 │   ├── signatures/     # 电子签名
-│   ├── question_bank/  # 题库管理（QuestionBank, KnowledgePoint 模型）
-│   └── llm/            # 大模型接入（LLMProvider, AIUsageLog 模型, LLMClient 统一客户端, AIService 服务层）
+│   ├── question_bank/  # 题库管理
+│   ├── llm/            # 大模型接入
+│   └── training_matrix/# 培训矩阵
 ├── templates/          # HTML 模板
 ├── static/             # CSS/JS/图片
 ├── media/              # 用户上传文件
-├── training_system/    # 项目配置 (settings, urls, wsgi)
+├── training_system/    # 项目配置
 ├── deploy/             # 部署脚本
 └── validation/         # 验证文档
 ```
@@ -161,6 +162,43 @@ training_system/
 │ max_tokens    │       └───────────────┘
 │ is_default    │
 └───────────────┘
+
+┌─────────────────┐       ┌───────────────────┐
+│ TrainingMatrix  │ 1:N   │ TrainingMatrixItem │
+├─────────────────┤──────►├───────────────────┤
+│ id (PK)         │       │ id (PK)           │
+│ department (FK) │       │ matrix (FK)       │
+│ title           │       │ course (FK)       │
+│ is_active       │       │ position          │
+└─────────────────┘       │ is_required       │
+         │                │ required_months   │
+         │                │ priority          │
+         │                └────────┬──────────┘
+         │                         │ 1:N
+         │                         ▼
+         │                ┌───────────────────┐
+         │                │ UserMatrixProgress│
+         │                ├───────────────────┤
+         │                │ id (PK)           │
+         │                │ user (FK)         │
+         │                │ item (FK)         │
+         │                │ status            │
+         │                │ due_date          │
+         │                │ completed_at      │
+         │                └───────────────────┘
+
+┌──────────────────────┐       ┌──────────────────────┐
+│ CertificateTemplate  │ 1:N   │ Certificate          │
+├──────────────────────┤──────►├──────────────────────┤
+│ id (PK)              │       │ id (PK)              │
+│ name                 │       │ template (FK)        │
+│ background_image     │       │ user (FK)            │
+│ content_template     │       │ course (FK)          │
+│ is_active            │       │ cert_no (UQ)         │
+└──────────────────────┘       │ score                │
+                               │ is_revoked           │
+                               │ created_at           │
+                               └──────────────────────┘
 ```
 
 ### 4.2 关键模型字段详述
@@ -293,6 +331,71 @@ training_system/
 | created_at | DateTimeField | auto_now_add | 创建时间 |
 | updated_at | DateTimeField | auto_now | 更新时间 |
 
+#### TrainingMatrix (apps/training_matrix/models.py)
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | AutoField | PK | 主键 |
+| department | ForeignKey | FK→Department, CASCADE | 所属部门 |
+| title | CharField | max=200 | 矩阵名称 |
+| description | TextField | blank | 描述 |
+| is_active | BooleanField | default=True | 是否启用 |
+| created_at | DateTimeField | auto_now_add | 创建时间 |
+| updated_at | DateTimeField | auto_now | 更新时间 |
+
+#### TrainingMatrixItem (apps/training_matrix/models.py)
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | AutoField | PK | 主键 |
+| matrix | ForeignKey | FK→TrainingMatrix, CASCADE | 所属矩阵 |
+| course | ForeignKey | FK→Course, CASCADE | 关联课程 |
+| position | CharField | max=100 | 岗位（全员/具体岗位） |
+| is_required | BooleanField | default=True | 是否必修 |
+| required_months | PositiveIntegerField | default=12 | 要求周期（月） |
+| priority | CharField | choices(高/中/低) | 优先级 |
+| notes | TextField | blank | 备注 |
+
+#### UserMatrixProgress (apps/training_matrix/models.py)
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | AutoField | PK | 主键 |
+| user | ForeignKey | FK→User, CASCADE | 用户 |
+| matrix | ForeignKey | FK→TrainingMatrix, CASCADE | 所属矩阵 |
+| item | ForeignKey | FK→TrainingMatrixItem, CASCADE | 所属条目 |
+| status | CharField | choices(pending/in_progress/completed/overdue) | 完成状态 |
+| course_progress | ForeignKey | FK→CourseProgress, SET_NULL | 关联课程进度 |
+| assigned_at | DateTimeField | auto_now_add | 分配时间 |
+| completed_at | DateTimeField | nullable | 完成时间 |
+| due_date | DateTimeField | nullable | 截止日期 |
+
+#### CertificateTemplate (apps/certificates/models.py)
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | AutoField | PK | 主键 |
+| name | CharField | max=200 | 模板名称 |
+| background_image | ImageField | upload_to='certs/' | 背景图片 |
+| content_template | TextField | 含占位符 | 模板内容 |
+| is_active | BooleanField | default=True | 是否启用 |
+| created_at | DateTimeField | auto_now_add | 创建时间 |
+
+#### Certificate (apps/certificates/models.py)
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | AutoField | PK | 主键 |
+| template | ForeignKey | FK→CertificateTemplate | 所属模板 |
+| user | ForeignKey | FK→User, CASCADE | 获证用户 |
+| course | ForeignKey | FK→Course, CASCADE | 关联课程 |
+| cert_no | UUIDField | UQ, default=uuid4 | 证书编号 |
+| score | PositiveIntegerField | nullable | 成绩 |
+| is_revoked | BooleanField | default=False | 是否已撤销 |
+| revoked_at | DateTimeField | nullable | 撤销时间 |
+| revoke_reason | TextField | blank | 撤销原因 |
+| created_at | DateTimeField | auto_now_add | 颁发时间 |
+
 ## 5. 接口设计
 
 ### 5.1 内部 API 接口
@@ -308,6 +411,11 @@ training_system/
 | /llm/providers/<id>/test/ | GET | 模型连通性测试 | 管理员 |
 | /llm/ai/course-summary/<id>/ | GET | AI 课程摘要 | 登录用户 |
 | /llm/ai/grade/<exam_id>/ | POST | AI 批改简答 | 管理员 |
+| /matrix/<pk>/assign/ | GET/POST | 分配矩阵 | 管理员 |
+| /matrix/<pk>/sync-progress/ | GET | 同步矩阵进度 | 管理员 |
+| /matrix/my/ | GET | 个人培训矩阵 | 登录用户 |
+| /certificates/ | GET | 证书列表 | 登录用户 |
+| /certificates/issue/ | GET/POST | 颁发证书 | 管理员 |
 
 ### 5.2 签名板参数
 

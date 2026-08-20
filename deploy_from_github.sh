@@ -1,7 +1,13 @@
 #!/bin/bash
 # ============================================================
-# 君合盟药物警戒培训管理系统 v4.0 - GitHub 一键部署脚本
+# 君合盟药物警戒培训管理系统 v4.0
+# 生产环境 GitHub 一键部署脚本
 # 在阿里云 ECS 服务器上执行
+#
+# 注意：本地开发请使用 README.md 中的快速启动方式
+#   pip install -r requirements.txt
+#   python manage.py migrate
+#   python manage.py runserver
 #
 # 使用方法:
 #   curl -sL https://raw.githubusercontent.com/yuhu2024/gvp-pv-quality-management/main/deploy_from_github.sh | bash

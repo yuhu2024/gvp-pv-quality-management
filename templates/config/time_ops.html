@@ -251,6 +251,9 @@
             最后修改：{% if time_config.last_modified_by %}{{ time_config.last_modified_by }}{% else %}-{% endif %}
             | {{ time_config.updated_at|date:"Y-m-d H:i:s" }}
         </p>
+        <a href="/settings/time-ops/records/?key={{ time_config.access_key }}" class="btn btn-outline-warning btn-sm">
+            <i class="bi bi-list-task"></i> 培训记录时间维护
+        </a>
         <a href="/dashboard/" class="btn btn-link btn-sm">返回首页</a>
     </div>
 </div>

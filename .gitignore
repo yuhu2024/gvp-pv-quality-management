@@ -1,10 +1,38 @@
-*.pyc
+# Python
 __pycache__/
-*.sqlite3
-media/
-staticfiles/
-.env
-/logs/
+*.py[cod]
+*.so
 *.egg-info/
 dist/
-*.db
+build/
+
+# Django
+db.sqlite3
+*.sqlite3
+staticfiles/
+media/uploads/
+media/signatures/
+media/certs/
+media/courses/
+logs/*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+*.local
+
+# Docker
+.deploy/
+
+# Migration files (optional - uncomment if you want to regenerate them)
+# */migrations/0*.py

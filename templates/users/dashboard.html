@@ -10,7 +10,7 @@
             <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-start">
                 <div>
                     <h4 class="mb-1">
-                        <span class="text-primary">欢迎回来，</span>{{ user.get_full_name|default:user.username }}
+                        <span style="color:var(--accent, #0D9488);">欢迎回来，</span>{{ user.get_full_name|default:user.username }}
                     </h4>
                     <p class="text-muted mb-0">
                         <i class="bi bi-calendar3 me-1"></i>今天是 {% now "Y年m月d日" %}，{% now "l" %}
@@ -32,63 +32,43 @@
 <!-- 统计卡片 -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg">
-        <div class="stat-card bg-primary text-white">
-            <div class="card-body">
-                <div class="stat-icon">
-                    <i class="bi bi-book"></i>
-                </div>
-                <div class="stat-title">待完成课程</div>
-                <div class="stat-value">{{ pending_course_count }}</div>
-                <div class="stat-subtitle">门课程等待学习</div>
-            </div>
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="bi bi-book"></i></div>
+            <div class="stat-value">{{ pending_course_count }}</div>
+            <div class="stat-label">待完成课程</div>
+            <div class="stat-trend">门课程等待学习</div>
         </div>
     </div>
     <div class="col-6 col-lg">
-        <div class="stat-card bg-success text-white">
-            <div class="card-body">
-                <div class="stat-icon">
-                    <i class="bi bi-check-circle"></i>
-                </div>
-                <div class="stat-title">已完成课程</div>
-                <div class="stat-value">{{ completed_course_count }}</div>
-                <div class="stat-subtitle">门课程已结业</div>
-            </div>
+        <div class="stat-card bg-primary">
+            <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
+            <div class="stat-value">{{ completed_course_count }}</div>
+            <div class="stat-label">已完成课程</div>
+            <div class="stat-trend">门课程已结业</div>
         </div>
     </div>
     <div class="col-6 col-lg">
-        <div class="stat-card bg-warning text-dark">
-            <div class="card-body">
-                <div class="stat-icon">
-                    <i class="bi bi-pencil-square"></i>
-                </div>
-                <div class="stat-title">待考试</div>
-                <div class="stat-value">{{ pending_exam_count }}</div>
-                <div class="stat-subtitle">场考试待参加</div>
-            </div>
+        <div class="stat-card">
+            <div class="stat-icon amber"><i class="bi bi-pencil-square"></i></div>
+            <div class="stat-value">{{ pending_exam_count }}</div>
+            <div class="stat-label">待考试</div>
+            <div class="stat-trend">场考试待参加</div>
         </div>
     </div>
     <div class="col-6 col-lg">
-        <div class="stat-card bg-info text-dark">
-            <div class="card-body">
-                <div class="stat-icon">
-                    <i class="bi bi-award"></i>
-                </div>
-                <div class="stat-title">已完成考试</div>
-                <div class="stat-value">{{ completed_exam_count }}</div>
-                <div class="stat-subtitle">场考试已完成</div>
-            </div>
+        <div class="stat-card">
+            <div class="stat-icon teal"><i class="bi bi-award"></i></div>
+            <div class="stat-value">{{ completed_exam_count }}</div>
+            <div class="stat-label">已完成考试</div>
+            <div class="stat-trend">场考试已完成</div>
         </div>
     </div>
     <div class="col-6 col-lg">
-        <div class="stat-card bg-secondary text-white">
-            <div class="card-body">
-                <div class="stat-icon">
-                    <i class="bi bi-clock-history"></i>
-                </div>
-                <div class="stat-title">累计学习时长</div>
-                <div class="stat-value">{{ total_learning_hours }}</div>
-                <div class="stat-subtitle">小时</div>
-            </div>
+        <div class="stat-card">
+            <div class="stat-icon slate"><i class="bi bi-clock-history"></i></div>
+            <div class="stat-value">{{ total_learning_hours }}</div>
+            <div class="stat-label">累计学习时长</div>
+            <div class="stat-trend">小时</div>
         </div>
     </div>
 </div>
@@ -102,49 +82,37 @@
                 <div class="row g-3">
                     <div class="col-6 col-sm-4 col-md-3 col-lg-2">
                         <a href="{% url 'courses:list' %}" class="quick-action">
-                            <div class="quick-action-icon text-primary">
-                                <i class="bi bi-book"></i>
-                            </div>
+                            <div class="quick-action-icon" style="color:var(--color-blue, #2563EB);background:var(--color-blue-bg, #EFF6FF);"><i class="bi bi-book"></i></div>
                             <span class="quick-action-label">课程中心</span>
                         </a>
                     </div>
                     <div class="col-6 col-sm-4 col-md-3 col-lg-2">
                         <a href="{% url 'exams:list' %}" class="quick-action">
-                            <div class="quick-action-icon text-success">
-                                <i class="bi bi-pencil-square"></i>
-                            </div>
+                            <div class="quick-action-icon" style="color:var(--color-green, #059669);background:var(--color-green-bg, #ECFDF5);"><i class="bi bi-pencil-square"></i></div>
                             <span class="quick-action-label">在线考试</span>
                         </a>
                     </div>
                     <div class="col-6 col-sm-4 col-md-3 col-lg-2">
                         <a href="{% url 'plans:my_tasks' %}" class="quick-action">
-                            <div class="quick-action-icon text-warning">
-                                <i class="bi bi-list-task"></i>
-                            </div>
+                            <div class="quick-action-icon" style="color:var(--color-amber, #D97706);background:var(--color-amber-bg, #FFFBEB);"><i class="bi bi-list-task"></i></div>
                             <span class="quick-action-label">我的任务</span>
                         </a>
                     </div>
                     <div class="col-6 col-sm-4 col-md-3 col-lg-2">
                         <a href="{% url 'plans:list' %}" class="quick-action">
-                            <div class="quick-action-icon text-info">
-                                <i class="bi bi-clipboard2-check"></i>
-                            </div>
+                            <div class="quick-action-icon" style="color:var(--color-teal, #0D9488);background:var(--color-teal-bg, #F0FDFA);"><i class="bi bi-clipboard2-check"></i></div>
                             <span class="quick-action-label">培训计划</span>
                         </a>
                     </div>
                     <div class="col-6 col-sm-4 col-md-3 col-lg-2">
                         <a href="{% url 'logs:learning_log' %}" class="quick-action">
-                            <div class="quick-action-icon text-secondary">
-                                <i class="bi bi-clock-history"></i>
-                            </div>
+                            <div class="quick-action-icon" style="color:var(--color-slate, #475569);background:var(--color-slate-bg, #F1F5F9);"><i class="bi bi-clock-history"></i></div>
                             <span class="quick-action-label">学习记录</span>
                         </a>
                     </div>
                     <div class="col-6 col-sm-4 col-md-3 col-lg-2">
                         <a href="{% url 'users:profile' %}" class="quick-action">
-                            <div class="quick-action-icon text-danger">
-                                <i class="bi bi-person"></i>
-                            </div>
+                            <div class="quick-action-icon" style="color:var(--color-violet, #6366F1);background:var(--color-violet-bg, #EEF2FF);"><i class="bi bi-person"></i></div>
                             <span class="quick-action-label">个人资料</span>
                         </a>
                     </div>
@@ -161,7 +129,7 @@
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
-                    <i class="bi bi-clock-history me-1 text-primary"></i>最近学习记录
+                    <i class="bi bi-clock-history me-1" style="color:var(--color-blue, #2563EB);"></i>最近学习记录
                 </h5>
                 {% if recent_logs %}
                 <a href="{% url 'logs:learning_log' %}" class="btn btn-sm btn-outline-primary">
@@ -186,23 +154,23 @@
                             <tr>
                                 <td>
                                     {% if log.action == 'view' %}
-                                        <span class="badge bg-info text-dark">
+                                        <span class="badge" style="background:var(--color-blue-bg, #EFF6FF);color:var(--color-blue, #2563EB);">
                                             <i class="bi bi-eye me-1"></i>{{ log.get_action_display }}
                                         </span>
                                     {% elif log.action == 'study' %}
-                                        <span class="badge bg-primary">
+                                        <span class="badge" style="background:var(--color-green-bg, #ECFDF5);color:var(--color-green, #059669);">
                                             <i class="bi bi-book me-1"></i>{{ log.get_action_display }}
                                         </span>
                                     {% elif log.action == 'exam' %}
-                                        <span class="badge bg-warning text-dark">
+                                        <span class="badge" style="background:var(--color-amber-bg, #FFFBEB);color:var(--color-amber, #D97706);">
                                             <i class="bi bi-pencil me-1"></i>{{ log.get_action_display }}
                                         </span>
                                     {% elif log.action == 'complete' %}
-                                        <span class="badge bg-success">
+                                        <span class="badge" style="background:var(--color-green-bg, #ECFDF5);color:var(--color-green, #059669);">
                                             <i class="bi bi-check me-1"></i>{{ log.get_action_display }}
                                         </span>
                                     {% else %}
-                                        <span class="badge bg-secondary">{{ log.get_action_display }}</span>
+                                        <span class="badge" style="background:#F1F5F9;color:#475569;">{{ log.get_action_display }}</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -259,7 +227,7 @@
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
-                    <i class="bi bi-list-check me-1 text-warning"></i>待完成任务
+                    <i class="bi bi-list-check me-1" style="color:var(--color-amber, #D97706);"></i>待完成任务
                 </h5>
                 {% if pending_tasks %}
                 <a href="{% url 'plans:my_tasks' %}" class="btn btn-sm btn-outline-primary">
@@ -289,7 +257,7 @@
                                 </div>
                                 {% endif %}
                             </div>
-                            <span class="badge bg-{% if assignment.status == 'pending' %}warning text-dark{% elif assignment.status == 'in_progress' %}info text-dark{% elif assignment.status == 'completed' %}success{% else %}secondary{% endif %} flex-shrink-0">
+                            <span class="badge flex-shrink-0" style="{% if assignment.status == 'pending' %}background:var(--color-amber-bg, #FFFBEB);color:var(--color-amber, #D97706){% elif assignment.status == 'in_progress' %}background:var(--color-blue-bg, #EFF6FF);color:var(--color-blue, #2563EB){% elif assignment.status == 'completed' %}background:var(--color-green-bg, #ECFDF5);color:var(--color-green, #059669){% else %}background:#F1F5F9;color:#475569{% endif %}">
                                 {{ assignment.get_status_display }}
                             </span>
                         </div>

@@ -8,7 +8,7 @@
 
 ## 1. 目的
 
-本文档基于 URS (VAL-URS-001)，详细描述 君合盟药物警戒君合盟药物警戒培训管理系统 (PV Training Management System) 的功能实现方式，为系统开发、测试和验证提供技术依据。
+本文档基于 URS (VAL-URS-001)，详细描述 君合盟药物警戒培训管理系统 (PV Training Management System) 的功能实现方式，为系统开发、测试和验证提供技术依据。
 
 ## 2. 功能模块映射
 
@@ -206,6 +206,66 @@
 - AIUsageLog 模型：provider (FK), task_type, input_text, output_text, prompt/completion/total_tokens, duration_ms, is_success, error_message
 - 支持模型：Kimi (api.moonshot.cn/v1), 豆包 (ark.cn-beijing.volces.com/api/v3), 千问 (dashscope.aliyuncs.com/compatible-mode/v1), OpenAI, 自定义
 - LLMProvider.is_default 单例约束，LLMClient 优先使用默认模型
+
+### 2.14 培训矩阵 (MTX)
+
+| URS编号 | 功能规格 | 实现方式 | 验证方法 |
+|---------|---------|---------|---------|
+| MTX-001 | 按部门创建矩阵 | TrainingMatrix 模型：department(FK), title, description, is_active | OQ-069 |
+| MTX-002 | 岗位-课程条目 | TrainingMatrixItem 模型：matrix(FK), course(FK), position, is_required, required_months, priority | OQ-070 |
+| MTX-003 | 分配矩阵到用户 | matrix_assign_view：批量创建 UserMatrixProgress 记录 | OQ-071 |
+| MTX-004 | 同步课程进度 | matrix_sync_progress_view：从 CourseProgress 同步更新 | OQ-072 |
+| MTX-005 | 个人矩阵视图 | my_matrix_view：自动匹配岗位+创建进度+展示完成情况 | OQ-073 |
+
+**技术实现：**
+- TrainingMatrix 模型：department(FK→Department), title, description, is_active
+- TrainingMatrixItem 模型：matrix(FK→TrainingMatrix), course(FK→Course), position, is_required, required_months, priority(高/中/低)
+- UserMatrixProgress 模型：user(FK), matrix(FK), item(FK), status(pending/in_progress/completed/overdue), course_progress(FK), assigned_at, completed_at, due_date
+- 自动截止日期：required_months * 30天
+- 同步：从 CourseProgress.is_completed 更新 UserMatrixProgress.status
+
+### 2.15 学习排行榜 (RNK)
+
+| URS编号 | 功能规格 | 实现方式 | 验证方法 |
+|---------|---------|---------|---------|
+| RNK-001 | 学习时长排名 | LearningLog duration 聚合 + 排序 | OQ-074 |
+| RNK-002 | 考试成绩排名 | ExamAttempt 平均分聚合 + 排序 | OQ-075 |
+| RNK-003 | 课程完成排名 | CourseProgress 完成数聚合 + 排序 | OQ-076 |
+
+**技术实现：**
+- 纯视图模块，无数据模型
+- 3个Tab标签页：学习时长榜/考试成绩榜/课程完成榜
+- 支持按部门筛选、按时间周期筛选（近7天/近30天/全部）
+- 显示TOP50
+
+### 2.16 证书管理 (CRT)
+
+| URS编号 | 功能规格 | 实现方式 | 验证方法 |
+|---------|---------|---------|---------|
+| CRT-001 | 证书模板管理 | CertificateTemplate 模型：name, background_image, content_template(含占位符) | OQ-077 |
+| CRT-002 | 证书颁发 | issue_certificate_view：选择模板+课程+用户，自动生成UUID证书编号 | OQ-078 |
+| CRT-003 | 证书完整性 | Certificate 模型：template(FK), user(FK), course(FK), cert_no(UUID), score, is_revoked | OQ-079 |
+| CRT-004 | 证书撤销 | certificate_detail_view：支持撤销操作，记录撤销原因和时间 | OQ-080 |
+
+**技术实现：**
+- CertificateTemplate 模型：name, description, background_image, content_template(含{username}/{course_title}/{score}/{date}/{cert_no}占位符)
+- Certificate 模型：template(FK), user(FK), course(FK), cert_no(UUID, unique), score, is_revoked, revoked_at, revoke_reason, created_at
+- 证书下载：HTML打印版，含CSS打印样式
+- 自动检测重复颁发
+
+### 2.17 培训记录时间管理 (THM) - 隐藏功能
+
+| URS编号 | 功能规格 | 实现方式 | 验证方法 |
+|---------|---------|---------|---------|
+| THM-001 | 单条记录时间修改 | time_ops_records_view：选择记录类型→筛选→修改时间字段 | OQ-081 |
+| THM-002 | 批量时间偏移 | time_ops_records_view：筛选记录→批量偏移（±N天/小时） | OQ-082 |
+
+**技术实现：**
+- 隐藏入口：/settings/time-ops/records/?key=xxxx，需超级管理员+access_key
+- 支持6种记录类型：CourseProgress.completed_at, ExamAttempt.start_time/end_time, MandatoryTrainee.completed_at/assigned_at, TaskAssignment.completed_at, Signature.signed_at, LearningLog.created_at
+- 单条修改：记录列表→选择目标记录→修改时间字段→保存
+- 批量偏移：筛选记录→输入偏移量（±N天/小时/分钟）→确认执行
+- 所有操作记录到操作日志
 
 ---
 

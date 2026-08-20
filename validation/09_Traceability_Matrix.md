@@ -1,8 +1,8 @@
 # 追溯矩阵 (Traceability Matrix)
 
 **文档编号：** VAL-TM-001  
-**版本：** 2.0  
-**生效日期：** 2026-07-24  
+**版本：** 3.0  
+**生效日期：** 2026-08-18  
 
 ---
 
@@ -34,8 +34,8 @@
 | CRS-004 | 审计字段 | FS-2.2 | DS-4.2 created_by等 | OQ-011 | - | |
 | CRS-005 | 视频防作弊 | FS-2.2 | DS-5.1 API | OQ-012 | - | |
 | CRS-006 | 文件大小显示 | FS-2.2 | DS-4.2 file_size | OQ-013 | - | |
-| CRS-007 | PPT 自动生成 | FS-2.12 | DS ppt_generator.py | OQ-046 | - | 待确认 |
-| CRS-008 | 文件类型展示预览 | FS-2.2 | DS course_detail.html | OQ-047 | - | 待确认 |
+| CRS-007 | PPT 自动生成 | FS-2.12 | DS ppt_generator.py | OQ-046 | - | 已确认 |
+| CRS-008 | 文件类型展示预览 | FS-2.2 | DS course_detail.html | OQ-047 | - | 已确认 |
 
 ### 2.3 考试管理
 
@@ -47,9 +47,9 @@
 | EXM-004 | 考试记录 | FS-2.3 | DS-4.2 ExamAttempt | OQ-017 | - | |
 | EXM-005 | 考试签名 | FS-2.3 | DS-5.1 API | OQ-018 | - | |
 | EXM-006 | 成绩查看 | FS-2.3 | DS-5.1 API | OQ-019 | - | |
-| EXM-007 | 考试试卷上传展示 | FS-2.3 | DS Exam.exam_paper | OQ-043 | - | 待确认 |
-| EXM-008 | 答题留痕记录 | FS-2.3 | DS AnswerLog | OQ-044 | - | 待确认 |
-| EXM-009 | 答题留痕查看 | FS-2.3 | DS attempt_logs.html | OQ-045 | - | 待确认 |
+| EXM-007 | 考试试卷上传展示 | FS-2.3 | DS Exam.exam_paper | OQ-043 | - | 已确认 |
+| EXM-008 | 答题留痕记录 | FS-2.3 | DS AnswerLog | OQ-044 | - | 已确认 |
+| EXM-009 | 答题留痕查看 | FS-2.3 | DS attempt_logs.html | OQ-045 | - | 已确认 |
 
 ### 2.4 培训计划
 
@@ -107,55 +107,89 @@
 
 | URS 编号 | URS 描述 | FS 编号 | DS 引用 | OQ 编号 | PQ 编号 | 状态 |
 |----------|----------|---------|---------|---------|---------|------|
-| CFG-001 | 可配置的成绩权重 | FS 2.8 | DS ScoreWeightConfig | OQ-040 | - | 待确认 |
-| CFG-002 | 可配置的关键参数 | FS 2.8 | DS SystemConfig | OQ-041 | - | 待确认 |
-| CFG-003 | 配置变更审计日志 | FS 2.8 | DS OperationLog | OQ-042 | - | 待确认 |
+| CFG-001 | 可配置的成绩权重 | FS 2.8 | DS ScoreWeightConfig | OQ-040 | - | 已确认 |
+| CFG-002 | 可配置的关键参数 | FS 2.8 | DS SystemConfig | OQ-041 | - | 已确认 |
+| CFG-003 | 配置变更审计日志 | FS 2.8 | DS OperationLog | OQ-042 | - | 已确认 |
 
 ### 2.10 题库管理 (QBN)
 
 | URS 编号 | URS 描述 | FS 编号 | DS 引用 | OQ 编号 | PQ 编号 | 状态 |
 |----------|----------|---------|---------|---------|---------|------|
-| QBN-001 | 题目增删改查 | FS 2.10 | DS QuestionBank | OQ-048 | - | 待确认 |
-| QBN-002 | 多维度题目信息 | FS 2.10 | DS QuestionBank fields | OQ-049 | - | 待确认 |
-| QBN-003 | 多维度筛选 | FS 2.10 | DS question_list_view | OQ-050 | - | 待确认 |
-| QBN-004 | Excel 导入导出 | FS 2.10 | DS openpyxl | OQ-051 | - | 待确认 |
-| QBN-005 | 知识点树形结构 | FS 2.10 | DS KnowledgePoint | OQ-052 | - | 待确认 |
-| QBN-006 | 题库统计面板 | FS 2.10 | DS question_stats_view | OQ-053 | - | 待确认 |
+| QBN-001 | 题目增删改查 | FS 2.10 | DS QuestionBank | OQ-048 | - | 已确认 |
+| QBN-002 | 多维度题目信息 | FS 2.10 | DS QuestionBank fields | OQ-049 | - | 已确认 |
+| QBN-003 | 多维度筛选 | FS 2.10 | DS question_list_view | OQ-050 | - | 已确认 |
+| QBN-004 | Excel 导入导出 | FS 2.10 | DS openpyxl | OQ-051 | - | 已确认 |
+| QBN-005 | 知识点树形结构 | FS 2.10 | DS KnowledgePoint | OQ-052 | - | 已确认 |
+| QBN-006 | 题库统计面板 | FS 2.10 | DS question_stats_view | OQ-053 | - | 已确认 |
 
 ### 2.11 自动出卷 (ATP)
 
 | URS 编号 | URS 描述 | FS 编号 | DS 引用 | OQ 编号 | PQ 编号 | 状态 |
 |----------|----------|---------|---------|---------|---------|------|
-| ATP-001 | 出卷模板管理 | FS 2.11 | DS PaperTemplate | OQ-054 | - | 待确认 |
-| ATP-002 | 知识点范围限定 | FS 2.11 | DS PaperRule.knowledge_point_ids | OQ-055 | - | 待确认 |
-| ATP-003 | 随机抽题组卷 | FS 2.11 | DS select_questions() | OQ-056 | - | 待确认 |
-| ATP-004 | 总分自动计算 | FS 2.11 | DS generate_exam() | OQ-057 | - | 待确认 |
-| ATP-005 | 使用次数统计 | FS 2.11 | DS F('usage_count')+1 | OQ-058 | - | 待确认 |
+| ATP-001 | 出卷模板管理 | FS 2.11 | DS PaperTemplate | OQ-054 | - | 已确认 |
+| ATP-002 | 知识点范围限定 | FS 2.11 | DS PaperRule.knowledge_point_ids | OQ-055 | - | 已确认 |
+| ATP-003 | 随机抽题组卷 | FS 2.11 | DS select_questions() | OQ-056 | - | 已确认 |
+| ATP-004 | 总分自动计算 | FS 2.11 | DS generate_exam() | OQ-057 | - | 已确认 |
+| ATP-005 | 使用次数统计 | FS 2.11 | DS F('usage_count')+1 | OQ-058 | - | 已确认 |
 
 ### 2.12 PPT 自动生成 (PPT)
 
 | URS 编号 | URS 描述 | FS 编号 | DS 引用 | OQ 编号 | PQ 编号 | 状态 |
 |----------|----------|---------|---------|---------|---------|------|
-| PPT-001 | PPT 课件生成 | FS 2.12 | DS ppt_generator.py | OQ-059 | - | 待确认 |
-| PPT-002 | 标准页面结构 | FS 2.12 | DS generate_course_ppt() | OQ-060 | - | 待确认 |
-| PPT-003 | 文件类型色块 | FS 2.12 | DS RGB color mapping | OQ-061 | - | 待确认 |
+| PPT-001 | PPT 课件生成 | FS 2.12 | DS ppt_generator.py | OQ-059 | - | 已确认 |
+| PPT-002 | 标准页面结构 | FS 2.12 | DS generate_course_ppt() | OQ-060 | - | 已确认 |
+| PPT-003 | 文件类型色块 | FS 2.12 | DS RGB color mapping | OQ-061 | - | 已确认 |
 
 ### 2.13 大模型接入 (AI)
 
 | URS 编号 | URS 描述 | FS 编号 | DS 引用 | OQ 编号 | PQ 编号 | 状态 |
 |----------|----------|---------|---------|---------|---------|------|
-| AI-001 | 多模型接入支持 | FS 2.13 | DS LLMProvider | OQ-062 | - | 待确认 |
-| AI-002 | 模型参数配置 | FS 2.13 | DS LLMProvider fields | OQ-063 | - | 待确认 |
-| AI-003 | AI 自动出题 | FS 2.13 | DS AIService.generate_questions | OQ-064 | - | 待确认 |
-| AI-004 | AI 自动批改 | FS 2.13 | DS AIService.grade_essay | OQ-065 | - | 待确认 |
-| AI-005 | AI 课程摘要 | FS 2.13 | DS AIService.summarize_course | OQ-066 | - | 待确认 |
-| AI-006 | AI 调用日志 | FS 2.13 | DS AIUsageLog | OQ-067 | - | 待确认 |
-| AI-007 | 默认模型设置 | FS 2.13 | DS is_default constraint | OQ-068 | - | 待确认 |
+| AI-001 | 多模型接入支持 | FS 2.13 | DS LLMProvider | OQ-062 | - | 已确认 |
+| AI-002 | 模型参数配置 | FS 2.13 | DS LLMProvider fields | OQ-063 | - | 已确认 |
+| AI-003 | AI 自动出题 | FS 2.13 | DS AIService.generate_questions | OQ-064 | - | 已确认 |
+| AI-004 | AI 自动批改 | FS 2.13 | DS AIService.grade_essay | OQ-065 | - | 已确认 |
+| AI-005 | AI 课程摘要 | FS 2.13 | DS AIService.summarize_course | OQ-066 | - | 已确认 |
+| AI-006 | AI 调用日志 | FS 2.13 | DS AIUsageLog | OQ-067 | - | 已确认 |
+| AI-007 | 默认模型设置 | FS 2.13 | DS is_default constraint | OQ-068 | - | 已确认 |
+
+### 2.14 培训矩阵 (MTX)
+
+| URS编号 | URS描述 | FS编号 | DS引用 | OQ编号 | PQ编号 | 状态 |
+|---------|---------|--------|--------|--------|--------|------|
+| MTX-001 | 按部门创建矩阵 | FS 2.14 | DS TrainingMatrix | OQ-069 | - | 已确认 |
+| MTX-002 | 岗位-课程配置 | FS 2.14 | DS TrainingMatrixItem | OQ-070 | - | 已确认 |
+| MTX-003 | 分配矩阵到用户 | FS 2.14 | DS matrix_assign_view | OQ-071 | - | 已确认 |
+| MTX-004 | 同步课程进度 | FS 2.14 | DS sync_progress | OQ-072 | - | 已确认 |
+| MTX-005 | 个人矩阵视图 | FS 2.14 | DS my_matrix_view | OQ-073 | - | 已确认 |
+
+### 2.15 学习排行榜 (RNK)
+
+| URS编号 | URS描述 | FS编号 | DS引用 | OQ编号 | PQ编号 | 状态 |
+|---------|---------|--------|--------|--------|--------|------|
+| RNK-001 | 学习时长排名 | FS 2.15 | DS ranking_view | OQ-074 | - | 已确认 |
+| RNK-002 | 考试成绩排名 | FS 2.15 | DS ranking_view | OQ-075 | - | 已确认 |
+| RNK-003 | 课程完成排名 | FS 2.15 | DS ranking_view | OQ-076 | - | 已确认 |
+
+### 2.16 证书管理 (CRT)
+
+| URS编号 | URS描述 | FS编号 | DS引用 | OQ编号 | PQ编号 | 状态 |
+|---------|---------|--------|--------|--------|--------|------|
+| CRT-001 | 证书模板管理 | FS 2.16 | DS CertificateTemplate | OQ-077 | - | 已确认 |
+| CRT-002 | 颁发证书 | FS 2.16 | DS issue_certificate_view | OQ-078 | - | 已确认 |
+| CRT-003 | 证书完整性 | FS 2.16 | DS Certificate模型 | OQ-079 | - | 已确认 |
+| CRT-004 | 证书撤销 | FS 2.16 | DS revoke功能 | OQ-080 | - | 已确认 |
+
+### 2.17 培训记录时间管理 (THM)
+
+| URS编号 | URS描述 | FS编号 | DS引用 | OQ编号 | PQ编号 | 状态 |
+|---------|---------|--------|--------|--------|--------|------|
+| THM-001 | 单条记录时间修改 | FS 2.17 | DS time_ops_records_view | OQ-081 | - | 已确认 |
+| THM-002 | 批量时间偏移 | FS 2.17 | DS time_ops_records_view | OQ-082 | - | 已确认 |
 
 ## 3. 需求覆盖率统计
 
-| 需求类别 | URS 总数 | 有 FS 映射 | 有 OQ 对应 | 有 PQ 对应 | 覆盖率 |
-|----------|----------|-----------|-----------|-----------|--------|
+| 需求类别 | URS总数 | 有FS映射 | 有OQ对应 | 有PQ对应 | 覆盖率 |
+|----------|---------|---------|---------|---------|--------|
 | 用户管理 | 7 | 7 | 7 | 0 | 100% |
 | 课程管理 | 8 | 8 | 8 | 0 | 100% |
 | 考试管理 | 9 | 9 | 9 | 0 | 100% |
@@ -167,11 +201,15 @@
 | 系统配置 | 3 | 3 | 3 | 0 | 100% |
 | 题库管理 | 6 | 6 | 6 | 0 | 100% |
 | 自动出卷 | 5 | 5 | 5 | 0 | 100% |
-| PPT 自动生成 | 3 | 3 | 3 | 0 | 100% |
+| PPT自动生成 | 3 | 3 | 3 | 0 | 100% |
 | 大模型接入 | 7 | 7 | 7 | 0 | 100% |
-| **总计** | **72** | **72** | **68** | **0** | **100%** |
+| 培训矩阵 | 5 | 5 | 5 | 0 | 100% |
+| 学习排行榜 | 3 | 3 | 3 | 0 | 100% |
+| 证书管理 | 4 | 4 | 4 | 0 | 100% |
+| 时间管理 | 2 | 2 | 2 | 0 | 100% |
+| **总计** | **86** | **86** | **82** | **0** | **100%** |
 
-**说明：** 功能需求总计 72 条（原有 46 条 + 新增 26 条），有 FS 映射 72 条（100%），有 OQ 对应 68 条（INF 由 IQ 覆盖），有 PQ 对应 0 条。覆盖率 100%。
+**说明：** 功能需求总计 86 条（原有 46 条 + 新增 40 条），有 FS 映射 86 条（100%），有 OQ 对应 82 条（INF 由 IQ 覆盖），有 PQ 对应 0 条。覆盖率 100%。
 
 ---
 
