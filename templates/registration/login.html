@@ -10,22 +10,39 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #0A1628 0%, #132347 50%, #1A3A6B 100%);
         margin: -1.5rem -3rem 0;
         padding: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .login-page::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(13,148,136,0.08) 0%, transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
     }
 
     .login-card {
-        border: none;
+        border: 1px solid rgba(255,255,255,0.1);
         border-radius: 16px;
         overflow: hidden;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         max-width: 440px;
         width: 100%;
+        background: #fff;
+        position: relative;
+        z-index: 1;
     }
 
     .login-card .card-header {
-        background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+        background: linear-gradient(135deg, #0A1628 0%, #132347 100%);
         color: #fff;
         text-align: center;
         padding: 2rem 1.5rem 1.5rem;
@@ -33,15 +50,17 @@
     }
 
     .login-card .card-header .login-icon {
-        width: 64px;
-        height: 64px;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 50%;
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, #0D9488, #5EE4D0);
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
         margin: 0 auto 1rem;
-        font-size: 1.8rem;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #fff;
     }
 
     .login-card .card-header h3 {
@@ -73,8 +92,8 @@
     }
 
     .login-card .form-control:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+        border-color: #0D9488;
+        box-shadow: 0 0 0 3px rgba(13,148,136,0.12);
     }
 
     .login-card .input-group-text {
@@ -94,13 +113,13 @@
         font-size: 1rem;
         font-weight: 600;
         border-radius: 8px;
-        letter-spacing: 2px;
+        letter-spacing: 1px;
         transition: all 0.3s ease;
     }
 
     .login-card .btn-login:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.4);
+        box-shadow: 0 4px 12px rgba(13,148,136,0.3);
     }
 
     .login-card .btn-login:active {
@@ -118,7 +137,7 @@
     }
 
     .login-footer a {
-        color: #0d6efd;
+        color: #0D9488;
         text-decoration: none;
         font-size: 0.875rem;
     }
@@ -147,9 +166,7 @@
     <div class="login-card">
         <!-- 登录卡片头部 -->
         <div class="card-header">
-            <div class="login-icon">
-                <i class="bi bi-mortarboard-fill"></i>
-            </div>
+            <div class="login-icon">PV</div>
             <h3>{{ SYSTEM_NAME }}</h3>
             <p>请登录您的账号以继续</p>
         </div>
